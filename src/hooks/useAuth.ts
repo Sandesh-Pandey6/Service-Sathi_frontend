@@ -14,11 +14,9 @@ export function useAuth() {
         setCredentials({
           user: response.user,
           access_token: response.access_token,
+          refresh_token: response.refresh_token,
         })
       );
-      if (response.refresh_token) {
-        localStorage.setItem('refreshToken', response.refresh_token);
-      }
     },
     [dispatch]
   );
