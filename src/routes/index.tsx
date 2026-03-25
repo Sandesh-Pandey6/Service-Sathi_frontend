@@ -1,14 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
-
-// Pages - placeholder components
-const HomePage = () => (
-  <div className="container py-5">
-    <h1>Service Sathi</h1>
-    <p className="lead">Hire trusted home service providers</p>
-    <p>Plumber, Electrician, Cleaner, Carpenter, Painter, AC Repair, Appliance Repair & more.</p>
-  </div>
-);
+import HomePage from '@/pages/HomePage';
 
 const ServicesPage = () => (
   <div className="container py-5">
