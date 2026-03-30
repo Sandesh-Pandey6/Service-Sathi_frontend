@@ -6,6 +6,7 @@ const cookies = new Cookies();
 
 export const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 10000, // 10s timeout — prevents hanging when backend is unreachable
   headers: {
     'Content-Type': 'application/json',
   },
@@ -53,15 +54,56 @@ api.interceptors.response.use(
 export const authApi = {
   register: (data: { email: string; password: string; full_name: string; role?: string; phone?: string }) =>
     api.post('/auth/register', data),
+  verifyOtp: (data: { email: string; otp: string }) => api.post('/auth/verify-otp', data),
+  resendOtp: (data: { email: string }) => api.post('/auth/resend-otp', data),
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),
   logout: (refreshToken?: string) => api.post('/auth/logout', { refresh_token: refreshToken }),
   me: () => api.get('/auth/me'),
 };
 
+export const adminApi = {
+  // Dashboard
+  getDashboardStats: () => api.get('/admin/dashboard/stats'),
+  // Users
+  listUsers: (params?: { page?: number; limit?: number; role?: string; search?: string }) =>
+    api.get('/admin/users', { params }),
+  verifyProvider: (userId: string) => api.put(`/admin/users/${userId}/verify`),
+  deleteUser: (userId: string) => api.delete(`/admin/users/${userId}`),
+  updateUserRole: (userId: string, role: string) => api.put(`/admin/users/${userId}/role`, { role }),
+  // Bookings
+  listBookings: (params?: { page?: number; limit?: number; status?: string; from_date?: string; to_date?: string }) =>
+    api.get('/admin/bookings', { params }),
+  // Analytics
+  getRevenueAnalytics: (params?: { from_date?: string; to_date?: string }) =>
+    api.get('/admin/analytics/revenue', { params }),
+  getPopularServices: (params?: { limit?: number }) =>
+    api.get('/admin/analytics/popular-services', { params }),
+  // Reports
+  getReports: (params: { type: string; from_date?: string; to_date?: string }) =>
+    api.get('/admin/reports', { params }),
+  // Settings — categories
+  createCategory: (data: { name: string; description?: string; icon?: string }) =>
+    api.post('/admin/categories', data),
+};
+
 // Users
 export const usersApi = {
   getProfile: () => api.get('/users/profile'),
-  updateProfile: (data: { full_name?: string; phone?: string }) => api.put('/users/profile', data),
+  updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string }) => api.put('/users/profile', data),
+  changePassword: (data: any) => api.put('/users/change-password', data),
+  uploadAvatar: async (formData: FormData) => {
+    const token = new Cookies().get('accessToken') || localStorage.getItem('accessToken');
+    const res = await fetch(`${BASE_URL}/users/upload-avatar`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    });
+    const d = await res.json();
+    if (!res.ok) throw { response: { status: res.status, data: d } };
+    return { data: d };
+  },
   listProviders: (params?: { page?: number; limit?: number; city?: string }) =>
     api.get('/users/providers', { params }),
   getProvider: (id: string) => api.get(`/users/providers/${id}`),
@@ -73,6 +115,7 @@ export const servicesApi = {
   getById: (id: string) => api.get(`/services/${id}`),
   search: (params?: Record<string, unknown>) => api.get('/services/search', { params }),
   listCategories: () => api.get('/services/categories'),
+  getProviderServices: (providerId: string) => api.get(`/services/provider/${providerId}`),
 };
 
 // Bookings
@@ -82,4 +125,26 @@ export const bookingsApi = {
   getProviderBookings: (params?: Record<string, unknown>) => api.get('/bookings/provider', { params }),
   getById: (id: string) => api.get(`/bookings/${id}`),
   updateStatus: (id: string, data: { status: string }) => api.put(`/bookings/${id}/status`, data),
+};
+
+// Provider Specific
+export const providerApi = {
+  getDashboardStats: () => api.get('/users/provider-stats'),
+  getEarnings: () => api.get('/users/provider-earnings'),
+  getServices: (providerId: string) => api.get(`/services/provider/${providerId}`),
+  getBookings: (params?: Record<string, unknown>) => api.get('/bookings/provider', { params }),
+  getAvailability: (providerId: string) => api.get(`/services/providers/${providerId}/availability`),
+  createAvailability: (providerId: string, data: Record<string, unknown>) => api.post(`/services/providers/${providerId}/availability`, data),
+  updateAvailability: (id: string, data: Record<string, unknown>) => api.put(`/services/availability/${id}`, data),
+  deleteAvailability: (id: string) => api.delete(`/services/availability/${id}`),
+  getReviews: (providerId: string) => api.get(`/reviews/provider/${providerId}`),
+};
+
+// Chat
+export const chatApi = {
+  getConversations: () => api.get('/chat/conversations'),
+  getMessages: (conversationId: string, params?: Record<string, unknown>) => api.get(`/chat/messages/${conversationId}`, { params }),
+  sendMessage: (data: Record<string, unknown>) => api.post('/chat/send', data),
+  markAsRead: (messageId: string) => api.put(`/chat/read/${messageId}`),
+  uploadAttachment: (formData: FormData) => api.post('/chat/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
