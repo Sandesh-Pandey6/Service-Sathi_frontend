@@ -2,7 +2,7 @@
 import React from 'react';
 
 type BadgeVariant =
-  | 'active' | 'inactive' | 'blocked'
+  | 'active' | 'inactive' | 'blocked' | 'banned'
   | 'verified' | 'pending' | 'rejected' | 'suspended'
   | 'completed' | 'confirmed' | 'cancelled'
   | 'paid' | 'refunded'
@@ -13,6 +13,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   active:    'bg-emerald-100 text-emerald-700',
   inactive:  'bg-slate-100 text-slate-600',
   blocked:   'bg-red-100 text-red-700',
+  banned:    'bg-rose-100 text-rose-700',
   verified:  'bg-emerald-100 text-emerald-700',
   pending:   'bg-amber-100 text-amber-700',
   rejected:  'bg-rose-100 text-rose-700',

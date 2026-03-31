@@ -4,9 +4,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  role: 'CUSTOMER' | 'PROVIDER' | 'ADMIN';
-  status: 'active' | 'blocked';
+  phone?: string;
+  role?: 'CUSTOMER' | 'PROVIDER' | 'ADMIN';
+  city: string;
+  bookings: number;
+  status: 'Active' | 'Inactive' | 'Banned';
   joinedDate: string;
   avatar: string;
 }
@@ -16,10 +18,13 @@ export interface Provider {
   name: string;
   email: string;
   category: string;
+  city: string;
   experience: string;
   rating: number;
   status: 'verified' | 'pending' | 'rejected' | 'suspended';
   totalServices: number;
+  jobs: number;
+  revenue: string;
   joinedDate: string;
 }
 
@@ -67,23 +72,21 @@ export interface Review {
 }
 
 export const mockUsers: User[] = [
-  { id: 'u1', name: 'Sandesh Pandey', email: 'sandesh@gmail.com', phone: '+977 9812345678', role: 'CUSTOMER', status: 'active', joinedDate: '2025-01-15', avatar: 'SP' },
-  { id: 'u2', name: 'Anita Sharma', email: 'anita@gmail.com', phone: '+977 9823456789', role: 'PROVIDER', status: 'active', joinedDate: '2025-02-20', avatar: 'AS' },
-  { id: 'u3', name: 'Bikash Thapa', email: 'bikash@gmail.com', phone: '+977 9834567890', role: 'CUSTOMER', status: 'blocked', joinedDate: '2025-03-05', avatar: 'BT' },
-  { id: 'u4', name: 'Nisha Rai', email: 'nisha@gmail.com', phone: '+977 9845678901', role: 'PROVIDER', status: 'active', joinedDate: '2025-03-18', avatar: 'NR' },
-  { id: 'u5', name: 'Rajan KC', email: 'rajan@gmail.com', phone: '+977 9856789012', role: 'CUSTOMER', status: 'active', joinedDate: '2025-04-01', avatar: 'RK' },
-  { id: 'u6', name: 'Sita Tamang', email: 'sita@gmail.com', phone: '+977 9867890123', role: 'CUSTOMER', status: 'active', joinedDate: '2025-04-12', avatar: 'ST' },
-  { id: 'u7', name: 'Prabhat Joshi', email: 'prabhat@gmail.com', phone: '+977 9878901234', role: 'PROVIDER', status: 'active', joinedDate: '2025-04-22', avatar: 'PJ' },
-  { id: 'u8', name: 'Maya Gurung', email: 'maya@gmail.com', phone: '+977 9889012345', role: 'CUSTOMER', status: 'blocked', joinedDate: '2025-05-03', avatar: 'MG' },
+  { id: 'u1', name: 'Anita Sharma', email: 'anita@email.com', city: 'Kathmandu', bookings: 14, status: 'Active', joinedDate: 'Jan 2025', avatar: 'AS' },
+  { id: 'u2', name: 'Bikram Karki', email: 'bikram@email.com', city: 'Pokhara', bookings: 7, status: 'Active', joinedDate: 'Feb 2025', avatar: 'BK' },
+  { id: 'u3', name: 'Priya Gurung', email: 'priya@email.com', city: 'Lalitpur', bookings: 3, status: 'Inactive', joinedDate: 'Mar 2025', avatar: 'PG' },
+  { id: 'u4', name: 'Ramesh Thapa', email: 'ramesh@email.com', city: 'Biratnagar', bookings: 21, status: 'Active', joinedDate: 'Jan 2025', avatar: 'RT' },
+  { id: 'u5', name: 'Sunita Rai', email: 'sunita@email.com', city: 'Bhaktapur', bookings: 2, status: 'Banned', joinedDate: 'Apr 2025', avatar: 'SR' },
+  { id: 'u6', name: 'Deepak KC', email: 'deepak@email.com', city: 'Dharan', bookings: 9, status: 'Active', joinedDate: 'Feb 2025', avatar: 'DK' },
 ];
 
 export const mockProviders: Provider[] = [
-  { id: 'p1', name: 'Anita Sharma', email: 'anita@gmail.com', category: 'Cleaning', experience: '3 years', rating: 4.8, status: 'verified', totalServices: 24, joinedDate: '2025-02-20' },
-  { id: 'p2', name: 'Nisha Rai', email: 'nisha@gmail.com', category: 'Plumbing', experience: '5 years', rating: 4.5, status: 'verified', totalServices: 18, joinedDate: '2025-03-18' },
-  { id: 'p3', name: 'Prabhat Joshi', email: 'prabhat@gmail.com', category: 'Electrical', experience: '7 years', rating: 4.9, status: 'pending', totalServices: 0, joinedDate: '2025-04-22' },
-  { id: 'p4', name: 'Ramesh Bhandari', email: 'ramesh@gmail.com', category: 'Carpentry', experience: '4 years', rating: 4.2, status: 'pending', totalServices: 9, joinedDate: '2025-05-10' },
-  { id: 'p5', name: 'Sunita Lama', email: 'sunita@gmail.com', category: 'Painting', experience: '2 years', rating: 3.9, status: 'rejected', totalServices: 0, joinedDate: '2025-05-18' },
-  { id: 'p6', name: 'Deepak Karki', email: 'deepak@gmail.com', category: 'Cleaning', experience: '1 year', rating: 4.1, status: 'suspended', totalServices: 5, joinedDate: '2025-06-01' },
+  { id: 'p1', name: 'Ram Shrestha',     email: 'ram@gmail.com',     category: 'Electrician', city: 'Kathmandu',  experience: '6 years', rating: 4.8, status: 'verified',  totalServices: 24, jobs: 142, revenue: 'Rs1.4L', joinedDate: '2025-02-20' },
+  { id: 'p2', name: 'Sita Tamang',      email: 'sita@gmail.com',    category: 'Beautician',  city: 'Lalitpur',   experience: '4 years', rating: 4.6, status: 'verified',  totalServices: 18, jobs: 98,  revenue: 'Rs76K',  joinedDate: '2025-03-18' },
+  { id: 'p3', name: 'Dipesh Magar',     email: 'dipesh@gmail.com',  category: 'Mechanic',    city: 'Pokhara',    experience: '7 years', rating: 4.9, status: 'pending',   totalServices: 12, jobs: 64,  revenue: 'Rs92K',  joinedDate: '2025-04-22' },
+  { id: 'p4', name: 'Anita Gurung',     email: 'anita@gmail.com',   category: 'Electrician', city: 'Biratnagar', experience: '3 years', rating: 4.7, status: 'verified',  totalServices: 9,  jobs: 31,  revenue: 'Rs38K',  joinedDate: '2025-05-10' },
+  { id: 'p5', name: 'Bikram Tamang',    email: 'bikram@gmail.com',  category: 'Carpenter',   city: 'Bhaktapur',  experience: '5 years', rating: 4.3, status: 'suspended', totalServices: 7,  jobs: 22,  revenue: 'Rs28K',  joinedDate: '2025-05-18' },
+  { id: 'p6', name: 'Sunita KC',        email: 'sunita@gmail.com',  category: 'Plumber',     city: 'Butwal',     experience: '2 years', rating: 3.5, status: 'pending',   totalServices: 3,  jobs: 15,  revenue: 'Rs18K',  joinedDate: '2025-06-01' },
 ];
 
 export const mockServices: Service[] = [
