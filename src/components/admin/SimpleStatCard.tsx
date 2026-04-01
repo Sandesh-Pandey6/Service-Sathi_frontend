@@ -19,9 +19,9 @@ export const SimpleStatCard: React.FC<SimpleStatCardProps> = ({ title, value, co
   const c = colorMap[color] || colorMap.blue;
   
   return (
-    <div className={`${c.bg} rounded-2xl p-6 transition-transform hover:scale-[1.02] cursor-default`}>
-      <p className={`text-[26px] font-bold ${c.text} leading-tight mb-0.5`}>{value}</p>
-      <p className={`text-[13px] font-medium ${c.label}`}>{title}</p>
+    <div className={`${c.bg} rounded-2xl p-4 sm:p-6 transition-transform hover:scale-[1.02] cursor-default`}>
+      <p className={`text-xl sm:text-[26px] font-bold ${c.text} leading-tight mb-0.5 truncate`}>{value}</p>
+      <p className={`text-[11px] sm:text-[13px] font-medium ${c.label} truncate`}>{title}</p>
     </div>
   );
 };

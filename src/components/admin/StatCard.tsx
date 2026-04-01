@@ -19,28 +19,29 @@ const colorMap: Record<string, { iconBg: string; text: string }> = {
   cyan:    { iconBg: 'bg-cyan-50 text-cyan-500',     text: 'text-cyan-600' },
   orange:  { iconBg: 'bg-orange-50 text-orange-500', text: 'text-orange-500' },
   yellow:  { iconBg: 'bg-yellow-50 text-yellow-500', text: 'text-yellow-500' },
+  rose:    { iconBg: 'bg-rose-50 text-rose-500',     text: 'text-rose-600' },
 };
 
 export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, change, changeType }) => {
   const c = colorMap[color] || colorMap.blue;
   
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col items-start h-full">
-      <div className={`p-2.5 rounded-full mb-4 ${c.iconBg}`}>
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col items-start h-full">
+      <div className={`p-2 sm:p-2.5 rounded-full mb-3 sm:mb-4 ${c.iconBg}`}>
         {icon}
       </div>
-      <p className="text-[28px] font-bold text-slate-800 leading-tight mb-1">{value}</p>
-      <p className="text-xs font-medium text-slate-500 mb-4">{title}</p>
+      <p className="text-xl sm:text-[28px] font-bold text-slate-800 leading-tight mb-1 truncate w-full">{value}</p>
+      <p className="text-[11px] sm:text-xs font-medium text-slate-500 mb-3 sm:mb-4 truncate w-full">{title}</p>
       
       {change && (
         <div className="mt-auto">
-          <p className={`text-[13px] font-bold flex items-center gap-1 ${
+          <p className={`text-[12px] sm:text-[13px] font-bold flex items-center gap-1 ${
             changeType === 'up' ? 'text-emerald-500' : 
             changeType === 'down' ? 'text-rose-500' : 'text-slate-400'
           }`}>
-            {changeType === 'up' ? <TrendingUp size={16} strokeWidth={2.5} /> : 
-             changeType === 'down' ? <TrendingDown size={16} strokeWidth={2.5} /> : 
-             <Minus size={16} strokeWidth={2.5} />} 
+            {changeType === 'up' ? <TrendingUp size={14} strokeWidth={2.5} /> : 
+             changeType === 'down' ? <TrendingDown size={14} strokeWidth={2.5} /> : 
+             <Minus size={14} strokeWidth={2.5} />} 
             {change}
           </p>
         </div>

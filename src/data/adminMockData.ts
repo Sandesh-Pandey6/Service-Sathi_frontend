@@ -45,6 +45,7 @@ export interface Booking {
   provider: string;
   service: string;
   date: string;
+  location: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   amount: number;
 }
@@ -98,12 +99,14 @@ export const mockServices: Service[] = [
 ];
 
 export const mockBookings: Booking[] = [
-  { id: 'b1001', customer: 'Sandesh Pandey', provider: 'Anita Sharma', service: 'Home Deep Cleaning', date: '2025-06-10', status: 'completed', amount: 2500 },
-  { id: 'b1002', customer: 'Rajan KC', provider: 'Nisha Rai', service: 'Pipe Leak Repair', date: '2025-06-12', status: 'confirmed', amount: 1800 },
-  { id: 'b1003', customer: 'Sita Tamang', provider: 'Prabhat Joshi', service: 'Wiring Installation', date: '2025-06-15', status: 'pending', amount: 3200 },
-  { id: 'b1004', customer: 'Maya Gurung', provider: 'Anita Sharma', service: 'Home Deep Cleaning', date: '2025-06-08', status: 'cancelled', amount: 2500 },
-  { id: 'b1005', customer: 'Bikash Thapa', provider: 'Ramesh Bhandari', service: 'Furniture Assembly', date: '2025-06-18', status: 'pending', amount: 1500 },
-  { id: 'b1006', customer: 'Sandesh Pandey', provider: 'Deepak Karki', service: 'Interior Painting', date: '2025-06-20', status: 'confirmed', amount: 4500 },
+  { id: 'B5921', customer: 'Anita Sharma', provider: 'Ram Shrestha', service: 'Electrician', date: 'Today 10:00', location: 'Kathmandu', status: 'confirmed', amount: 1050 },
+  { id: 'B5920', customer: 'Bikram Karki', provider: 'Sita Tamang', service: 'Beautician', date: 'Today 09:30', location: 'Kathmandu', status: 'completed', amount: 800 },
+  { id: 'B5919', customer: 'Priya Gurung', provider: 'Dipesh Magar', service: 'Plumber', date: 'Today 08:15', location: 'Kathmandu', status: 'pending', amount: 950 },
+  { id: 'B5918', customer: 'Ramesh Thapa', provider: 'Anita Gurung', service: 'Mechanic', date: 'Yesterday', location: 'Kathmandu', status: 'completed', amount: 1200 },
+  { id: 'B5917', customer: 'Sunita Rai', provider: 'Bikram Tamang', service: 'Carpenter', date: 'Yesterday', location: 'Kathmandu', status: 'cancelled', amount: 700 },
+  { id: 'B5916', customer: 'Anita Sharma', provider: 'Ram Shrestha', service: 'Electrician', date: 'Today 10:00', location: 'Kathmandu', status: 'confirmed', amount: 1050 },
+  { id: 'B5915', customer: 'Bikram Karki', provider: 'Sita Tamang', service: 'Beautician', date: 'Today 09:30', location: 'Kathmandu', status: 'completed', amount: 800 },
+  { id: 'B5914', customer: 'Priya Gurung', provider: 'Dipesh Magar', service: 'Plumber', date: 'Today 08:15', location: 'Kathmandu', status: 'pending', amount: 950 },
 ];
 
 export const mockPayments: Payment[] = [

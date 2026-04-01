@@ -14,8 +14,8 @@ interface ToggleProps {
 }
 
 const Toggle: React.FC<ToggleProps> = ({ label, description, enabled, onChange }) => (
-  <div className="flex items-center justify-between py-3">
-    <div>
+  <div className="flex items-center justify-between py-3 gap-3">
+    <div className="min-w-0">
       <p className="text-sm font-medium text-slate-800">{label}</p>
       {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
     </div>
@@ -35,8 +35,8 @@ interface SectionProps {
 }
 
 const Section: React.FC<SectionProps> = ({ title, icon, children }) => (
-  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-    <h3 className="font-semibold text-slate-800 flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
+  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+    <h3 className="font-semibold text-slate-800 flex items-center gap-2 mb-4 sm:mb-5 pb-3 border-b border-slate-100 text-sm sm:text-base">
       <span className="text-cyan-600 flex items-center justify-center">{icon}</span> {title}
     </h3>
     {children}
@@ -117,7 +117,7 @@ export default function AdminSettings() {
 
   return (
     <AdminLayout title="Settings" subtitle="Manage platform configuration and admin preferences">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
         {/* General Settings */}
         <Section title="General Settings" icon={<Globe size={20} strokeWidth={2.5} />}>
@@ -249,11 +249,11 @@ export default function AdminSettings() {
 
         {/* Admin Profile */}
         <Section title="Edit Profile" icon={<User size={20} strokeWidth={2.5} />}>
-          <div className="mb-6">
-            <h2 className="text-xl font-extrabold text-[#111827]">Personal Info</h2>
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-extrabold text-[#111827]">Personal Info</h2>
           </div>
           
-          <div className="flex items-center gap-5 p-5 mb-6 bg-slate-50 border border-slate-100 rounded-2xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 p-4 sm:p-5 mb-6 bg-slate-50 border border-slate-100 rounded-2xl">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-cyan-50 flex items-center justify-center border border-slate-200 shrink-0">
               {user?.profile_image ? (
                 <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover" />
@@ -261,7 +261,7 @@ export default function AdminSettings() {
                 <span className="text-xl font-bold text-cyan-600">{user?.full_name?.[0]?.toUpperCase() || 'A'}</span>
               )}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold text-slate-800 mb-1">Profile Photo</h3>
               <p className="text-xs text-slate-500 mb-3">Upload a new avatar or change your existing one.</p>
               <div className="flex gap-2">
@@ -286,7 +286,7 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div className="space-y-1.5 relative">
               <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold text-slate-500 uppercase">First Name</label>
               <input value={profileName.split(' ')[0] || ''} onChange={e => setProfileName(`${e.target.value} ${profileName.split(' ').slice(1).join(' ')}`.trim())} required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none focus:border-cyan-500 transition-all text-sm font-medium text-slate-700 bg-white" />
@@ -297,7 +297,7 @@ export default function AdminSettings() {
               <input value={profileName.split(' ').slice(1).join(' ') || ''} onChange={e => setProfileName(`${profileName.split(' ')[0] || ''} ${e.target.value}`.trim())} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none focus:border-cyan-500 transition-all text-sm font-medium text-slate-700 bg-white" />
             </div>
 
-            <div className="space-y-1.5 relative md:col-span-2 mt-1">
+            <div className="space-y-1.5 relative sm:col-span-2 mt-1">
               <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold text-slate-500 uppercase z-10">Email</label>
               <div className="relative">
                 <input value={user?.email || ''} disabled className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-slate-50 text-slate-500 text-sm font-medium cursor-not-allowed pr-10" />
@@ -307,12 +307,12 @@ export default function AdminSettings() {
               </div>
             </div>
 
-            <div className="space-y-1.5 relative md:col-span-2 mt-1">
+            <div className="space-y-1.5 relative sm:col-span-2 mt-1">
               <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold text-slate-500 uppercase">Address</label>
               <input value={(profileData as any)?.address || ''} onChange={e => setProfileData({ ...profileData as any, address: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none focus:border-cyan-500 transition-all text-sm font-medium text-slate-700 bg-white" />
             </div>
 
-            <div className="space-y-1.5 relative md:col-span-2 mt-1">
+            <div className="space-y-1.5 relative sm:col-span-2 mt-1">
               <label className="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold text-slate-500 uppercase">Contact Number</label>
               <input value={profilePhone} onChange={e => setProfilePhone(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none focus:border-cyan-500 transition-all text-sm font-medium text-slate-700 bg-white" />
             </div>
@@ -339,8 +339,8 @@ export default function AdminSettings() {
 
           </div>
 
-          <div className="flex gap-3 justify-end mt-8">
-            <button type="button" onClick={() => window.history.back()} className="px-6 py-2 rounded-xl border border-gray-200 text-slate-600 text-sm font-bold hover:bg-gray-50 transition-colors">
+          <div className="flex flex-col sm:flex-row gap-3 justify-end mt-6 sm:mt-8">
+            <button type="button" onClick={() => window.history.back()} className="px-6 py-2 rounded-xl border border-gray-200 text-slate-600 text-sm font-bold hover:bg-gray-50 transition-colors order-2 sm:order-1">
               Cancel
             </button>
             <button 
@@ -363,7 +363,7 @@ export default function AdminSettings() {
                   setIsSavingProfile(false);
                 }
               }} 
-              className="px-6 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors w-32 flex justify-center items-center"
+              className="px-6 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors w-full sm:w-32 flex justify-center items-center order-1 sm:order-2"
             >
               {isSavingProfile ? 'Saving...' : 'Save'}
             </button>

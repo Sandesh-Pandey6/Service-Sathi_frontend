@@ -58,12 +58,12 @@ export default function AdminProviders() {
       {/* Top Bar: Tabs + Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 mt-2 gap-4">
         {/* Pill Tabs */}
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 overflow-x-auto scrollbar-hide w-full sm:w-auto pb-1 sm:pb-0">
           {tabs.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+              className={`px-3 sm:px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab
                   ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
                   : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
@@ -76,7 +76,7 @@ export default function AdminProviders() {
 
         {/* Verify Pending Button */}
         {pendingCount > 0 && (
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white font-bold text-sm rounded-xl hover:from-red-700 hover:to-red-600 transition-all shadow-md shadow-red-600/20 active:scale-[0.98]">
+          <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white font-bold text-sm rounded-xl hover:from-red-700 hover:to-red-600 transition-all shadow-md shadow-red-600/20 active:scale-[0.98]">
             <ShieldCheck size={16} />
             Verify Pending ({pendingCount})
           </button>
@@ -84,7 +84,7 @@ export default function AdminProviders() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
         <SimpleStatCard title="Total Providers"     value={`${stats.total.toLocaleString()}`}     color="blue"    />
         <SimpleStatCard title="Verified Providers"   value={`${stats.verified.toLocaleString()}`}  color="emerald" />
         <SimpleStatCard title="Pending Providers"    value={`${stats.pending.toLocaleString()}`}   color="amber"   />
@@ -94,17 +94,17 @@ export default function AdminProviders() {
       {/* Providers Table */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left min-w-[800px]">
             <thead>
               <tr className="border-b border-slate-50">
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">Provider</th>
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">Service</th>
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">City</th>
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">Rating</th>
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">Jobs</th>
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">Revenue</th>
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">Status</th>
-                <th className="px-6 py-5 text-xs font-bold text-slate-400">Actions</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Provider</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Service</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">City</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Rating</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Jobs</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Revenue</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Status</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -122,7 +122,7 @@ export default function AdminProviders() {
                 return (
                   <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                     {/* Provider Name + Avatar */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-full ${avatarColor} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm`}>
                           {initials}
@@ -132,38 +132,38 @@ export default function AdminProviders() {
                     </td>
 
                     {/* Service Category */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-slate-600">{p.category}</span>
                     </td>
 
                     {/* City */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-slate-500">{p.city}</span>
                     </td>
 
                     {/* Rating Stars */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       {renderStars(p.rating)}
                     </td>
 
                     {/* Jobs */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-bold text-slate-800">{p.jobs}</span>
                     </td>
 
                     {/* Revenue */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-semibold text-slate-700">{p.revenue}</span>
                     </td>
 
                     {/* Status Badge */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={p.status} />
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         {/* View */}
                         <button
                           title="View Provider"
