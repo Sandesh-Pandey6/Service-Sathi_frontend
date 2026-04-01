@@ -21,7 +21,8 @@ import AdminBookings from '@/pages/admin/AdminBookings';
 import AdminPayments from '@/pages/admin/AdminPayments';
 import AdminReviews from '@/pages/admin/AdminReviews';
 import AdminReports from '@/pages/admin/AdminReports';
-import AdminNotifications from '@/pages/admin/AdminNotifications';
+import AdminNotifications from '@/pages/admin/AdminNotifications'; // Force refresh TS compiler
+import AdminSupport from '@/pages/admin/AdminSupport';
 import AdminSettings from '@/pages/admin/AdminSettings';
 
 import ProviderLayout from '@/components/layout/ProviderLayout';
@@ -102,6 +103,7 @@ export const routes = [
       { path: 'reviews', element: <AdminReviews /> },
       { path: 'reports', element: <AdminReports /> },
       { path: 'notifications', element: <AdminNotifications /> },
+      { path: 'support', element: <AdminSupport /> },
       { path: 'settings', element: <AdminSettings /> },
     ],
   },
