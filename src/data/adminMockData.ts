@@ -39,6 +39,15 @@ export interface Service {
   createdAt: string;
 }
 
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  providers: number;
+  bookings: string | number;
+  revenue: string;
+  status: 'active' | 'disabled';
+}
+
 export interface Booking {
   id: string;
   customer: string;
@@ -69,7 +78,7 @@ export interface Review {
   rating: number;
   text: string;
   date: string;
-  status: 'published' | 'hidden' | 'reported';
+  status: 'published' | 'hidden' | 'flagged';
 }
 
 export const mockUsers: User[] = [
@@ -98,6 +107,17 @@ export const mockServices: Service[] = [
   { id: 's5', name: 'Interior Painting', category: 'Painting', provider: 'Deepak Karki', price: 4500, status: 'inactive', bookings: 7, createdAt: '2025-05-20' },
 ];
 
+export const mockServiceCategories: ServiceCategory[] = [
+  { id: 'c1', name: 'Electrician', providers: 312, bookings: '1,842', revenue: 'Rs2.1L', status: 'active' },
+  { id: 'c2', name: 'Plumber', providers: 248, bookings: '1,423', revenue: 'Rs1.6L', status: 'active' },
+  { id: 'c3', name: 'Beautician', providers: 195, bookings: '1,201', revenue: 'Rs98K', status: 'active' },
+  { id: 'c4', name: 'Mechanic', providers: 142, bookings: 934, revenue: 'Rs1.1L', status: 'active' },
+  { id: 'c5', name: 'Carpenter', providers: 98, bookings: 612, revenue: 'Rs72K', status: 'active' },
+  { id: 'c6', name: 'AC Repair', providers: 76, bookings: 441, revenue: 'Rs53K', status: 'active' },
+  { id: 'c7', name: 'Painter', providers: 61, bookings: 382, revenue: 'Rs44K', status: 'disabled' },
+  { id: 'c8', name: 'Gardener', providers: 44, bookings: 213, revenue: 'Rs25K', status: 'active' },
+];
+
 export const mockBookings: Booking[] = [
   { id: 'B5921', customer: 'Anita Sharma', provider: 'Ram Shrestha', service: 'Electrician', date: 'Today 10:00', location: 'Kathmandu', status: 'confirmed', amount: 1050 },
   { id: 'B5920', customer: 'Bikram Karki', provider: 'Sita Tamang', service: 'Beautician', date: 'Today 09:30', location: 'Kathmandu', status: 'completed', amount: 800 },
@@ -118,9 +138,9 @@ export const mockPayments: Payment[] = [
 ];
 
 export const mockReviews: Review[] = [
-  { id: 'r1', customer: 'Sandesh Pandey', service: 'Home Deep Cleaning', provider: 'Anita Sharma', rating: 5, text: 'Excellent service! Very professional and thorough.', date: '2025-06-11', status: 'published' },
-  { id: 'r2', customer: 'Rajan KC', service: 'Pipe Leak Repair', provider: 'Nisha Rai', rating: 4, text: 'Good work, fixed the issue quickly.', date: '2025-06-13', status: 'published' },
-  { id: 'r3', customer: 'Bikash Thapa', service: 'Furniture Assembly', provider: 'Ramesh Bhandari', rating: 2, text: 'Parts were missing, took too long.', date: '2025-06-19', status: 'reported' },
-  { id: 'r4', customer: 'Sita Tamang', service: 'Interior Painting', provider: 'Deepak Karki', rating: 3, text: 'Average work, could be better.', date: '2025-06-14', status: 'hidden' },
-  { id: 'r5', customer: 'Maya Gurung', service: 'Home Deep Cleaning', provider: 'Anita Sharma', rating: 5, text: 'Amazing! House looks spotless.', date: '2025-06-09', status: 'published' },
+  { id: 'r1', customer: 'Anita Sharma', provider: 'Ram Shrestha', service: 'Electrician', rating: 5, text: 'Excellent work, very professional!', date: 'Today', status: 'published' },
+  { id: 'r2', customer: 'Bikram Karki', provider: 'Sita Tamang', service: 'Beautician', rating: 4, text: 'Good service but slightly late.', date: 'Yesterday', status: 'published' },
+  { id: 'r3', customer: 'Priya Gurung', provider: 'Dipesh Magar', service: 'Mechanic', rating: 2, text: 'Not satisfied. Poor quality work.', date: '2 days ago', status: 'flagged' },
+  { id: 'r4', customer: 'Ramesh Thapa', provider: 'Anita Gurung', service: 'Electrician', rating: 5, text: 'Very fast and clean. Highly recommend!', date: '3 days ago', status: 'published' },
+  { id: 'r5', customer: 'Sunita Rai', provider: 'Bikram Tamang', service: 'Carpenter', rating: 1, text: 'Terrible experience, very rude.', date: '4 days ago', status: 'flagged' },
 ];

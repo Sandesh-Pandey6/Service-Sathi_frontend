@@ -6,8 +6,8 @@ type BadgeVariant =
   | 'verified' | 'pending' | 'rejected' | 'suspended'
   | 'completed' | 'confirmed' | 'cancelled'
   | 'paid' | 'refunded'
-  | 'published' | 'hidden' | 'reported'
-  | 'card' | 'cash' | 'wallet';
+  | 'published' | 'hidden' | 'reported' | 'flagged'
+  | 'card' | 'cash' | 'wallet' | 'disabled';
 
 const variantStyles: Record<BadgeVariant, string> = {
   active:    'bg-emerald-100 text-emerald-700',
@@ -26,9 +26,11 @@ const variantStyles: Record<BadgeVariant, string> = {
   published: 'bg-emerald-100 text-emerald-700',
   hidden:    'bg-slate-100 text-slate-600',
   reported:  'bg-rose-100 text-rose-700',
+  flagged:   'bg-rose-100 text-rose-700',
   card:      'bg-blue-100 text-blue-700',
   cash:      'bg-slate-100 text-slate-600',
   wallet:    'bg-violet-100 text-violet-700',
+  disabled:  'bg-slate-100 text-slate-600',
 };
 
 interface Props {

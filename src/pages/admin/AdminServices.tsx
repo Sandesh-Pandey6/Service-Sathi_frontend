@@ -1,99 +1,54 @@
 // src/pages/admin/AdminServices.tsx
-import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { Clipboard, CheckCircle, PauseCircle, Trophy, Search } from 'lucide-react';
-import { mockServices } from '@/data/adminMockData';
-
-const categories = ['ALL', 'Cleaning', 'Plumbing', 'Electrical', 'Carpentry', 'Painting'];
+import { PackagePlus, Eye, Trash2 } from 'lucide-react';
+import { mockServiceCategories } from '@/data/adminMockData';
 
 export default function AdminServices() {
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-
-  const filtered = mockServices.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.provider.toLowerCase().includes(search.toLowerCase());
-    const matchCat = categoryFilter === 'ALL' || s.category === categoryFilter;
-    const matchStatus = statusFilter === 'ALL' || s.status === statusFilter;
-    return matchSearch && matchCat && matchStatus;
-  });
-
-  const topCategory = mockServices.reduce<Record<string, number>>((acc, s) => {
-    acc[s.category] = (acc[s.category] || 0) + 1; return acc;
-  }, {});
-  const topCat = Object.entries(topCategory).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
-
   return (
-    <AdminLayout title="Services" subtitle="Manage all services offered on the platform">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <StatCard title="Total Services"  value={mockServices.length}                                    icon={<Clipboard size={24} />} color="blue"    />
-        <StatCard title="Active"          value={mockServices.filter(s => s.status === 'active').length} icon={<CheckCircle size={24} />} color="emerald" />
-        <StatCard title="Inactive"        value={mockServices.filter(s => s.status === 'inactive').length} icon={<PauseCircle size={24} />} color="amber"  />
-        <StatCard title="Top Category"    value={topCat}                                                 icon={<Trophy size={24} />} color="violet"  />
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 px-4 sm:px-5 py-4 border-b border-slate-100">
-          <div className="relative flex-1 min-w-0">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Search size={16} /></span>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search services..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none" />
-          </div>
-          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-400 bg-white flex-1 sm:flex-none min-w-0">
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-400 bg-white flex-1 sm:flex-none min-w-0">
-              <option value="ALL">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
+    <AdminLayout title="Services & Categories" subtitle="Admin > Services">
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+          <h2 className="text-lg font-bold text-slate-800">Service Categories</h2>
+          <button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+            <PackagePlus size={18} />
+            Add Category
+          </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
+          <table className="w-full text-sm min-w-[800px]">
             <thead>
-              <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
-                <th className="text-left px-4 sm:px-5 py-3 font-semibold">Service Name</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-semibold">Category</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-semibold">Provider</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-semibold">Price</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-semibold">Bookings</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-semibold">Status</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-semibold">Actions</th>
+              <tr className="text-left text-slate-400 border-b border-slate-100">
+                <th className="pb-3 font-medium px-4">Category</th>
+                <th className="pb-3 font-medium px-4">Providers</th>
+                <th className="pb-3 font-medium px-4">Bookings</th>
+                <th className="pb-3 font-medium px-4">Revenue</th>
+                <th className="pb-3 font-medium px-4">Status</th>
+                <th className="pb-3 font-medium px-4">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="text-center py-12 text-slate-400">No services found</td></tr>
+            <tbody>
+              {mockServiceCategories.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-12 text-slate-400">No categories found</td></tr>
               )}
-              {filtered.map(s => (
-                <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 sm:px-5 py-3.5">
-                    <p className="font-semibold text-slate-800">{s.name}</p>
-                    <p className="text-xs text-slate-400">Added {s.createdAt}</p>
+              {mockServiceCategories.map((c, i) => (
+                <tr key={`${c.id}-${i}`} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                  <td className="py-4 px-4 font-bold text-slate-800">{c.name}</td>
+                  <td className="py-4 px-4 text-slate-500">{c.providers}</td>
+                  <td className="py-4 px-4 text-slate-500">{c.bookings}</td>
+                  <td className="py-4 px-4 font-bold text-slate-800">{c.revenue}</td>
+                  <td className="py-4 px-4">
+                    <StatusBadge status={c.status} />
                   </td>
-                  <td className="px-3 sm:px-4 py-3.5">
-                    <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">{s.category}</span>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3.5 text-slate-600">{s.provider}</td>
-                  <td className="px-3 sm:px-4 py-3.5">
-                    <span className="font-semibold text-slate-800 whitespace-nowrap">Rs {s.price.toLocaleString()}</span>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3.5">
-                    <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-2 py-1 rounded-full whitespace-nowrap">{s.bookings} bookings</span>
-                  </td>
-                  <td className="px-3 sm:px-4 py-3.5"><StatusBadge status={s.status} /></td>
-                  <td className="px-3 sm:px-4 py-3.5">
-                    <div className="flex items-center gap-1.5">
-                      <button className="text-xs text-slate-600 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors border border-slate-200">View</button>
-                      <button className="text-xs text-amber-600 hover:bg-amber-50 px-2 py-1 rounded-lg transition-colors border border-slate-200">Edit</button>
-                      <button className="text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors border border-slate-200">Remove</button>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-3">
+                      <button className="text-slate-400 hover:text-blue-600 transition-colors p-1" title="View Details">
+                        <Eye size={18} />
+                      </button>
+                      <button className="text-slate-400 hover:text-red-600 transition-colors p-1" title="Delete Category">
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </td>
                 </tr>

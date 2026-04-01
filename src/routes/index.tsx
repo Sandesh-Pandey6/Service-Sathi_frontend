@@ -21,6 +21,7 @@ import AdminBookings from '@/pages/admin/AdminBookings';
 import AdminPayments from '@/pages/admin/AdminPayments';
 import AdminReviews from '@/pages/admin/AdminReviews';
 import AdminReports from '@/pages/admin/AdminReports';
+import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminSettings from '@/pages/admin/AdminSettings';
 
 import ProviderLayout from '@/components/layout/ProviderLayout';
@@ -100,6 +101,7 @@ export const routes = [
       { path: 'payments', element: <AdminPayments /> },
       { path: 'reviews', element: <AdminReviews /> },
       { path: 'reports', element: <AdminReports /> },
+      { path: 'notifications', element: <AdminNotifications /> },
       { path: 'settings', element: <AdminSettings /> },
     ],
   },
