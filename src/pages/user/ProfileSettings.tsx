@@ -1,21 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Camera, Pencil, X, Check, Loader2 } from 'lucide-react';
+import { Camera, CheckCircle2, Loader2, X, Check } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usersApi } from '@/lib/api';
 
 /* ─── Reusable info field ─── */
 function InfoRow({ label, value }: { label: string; value?: string }) {
   return (
-    <div style={{ marginBottom: '28px' }}>
-      <p style={{
-        fontSize: '0.7rem', fontWeight: 700,
-        letterSpacing: '0.1em', textTransform: 'uppercase',
-        color: '#00b0b0', marginBottom: '6px',
-      }}>{label}</p>
-      <p style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: 0 }}>
-        {value || '—'}
-      </p>
+    <div className="grid grid-cols-[160px_1fr] items-center py-4">
+      <p className="text-[13px] font-bold text-slate-400">{label}</p>
+      <p className="text-[14px] font-bold text-slate-900">{value || '—'}</p>
     </div>
   );
 }
@@ -29,29 +23,18 @@ function EditField({
   disabled?: boolean; type?: string;
 }) {
   return (
-    <div style={{ marginBottom: '18px' }}>
-      <label style={{
-        display: 'block', fontSize: '0.7rem', fontWeight: 700,
-        letterSpacing: '0.1em', textTransform: 'uppercase',
-        color: '#00b0b0', marginBottom: '6px',
-      }}>{label}</label>
+    <div className="grid grid-cols-[160px_1fr] items-center py-3">
+      <label className="text-[13px] font-bold text-slate-400">{label}</label>
       <input
         type={type}
         value={value}
         onChange={e => onChange?.(e.target.value)}
         disabled={disabled}
-        style={{
-          width: '100%', padding: '10px 14px',
-          background: disabled ? '#f8fafa' : 'white',
-          border: '1.5px solid ' + (disabled ? '#e5e7eb' : '#d1d5db'),
-          borderRadius: '10px', fontSize: '0.9rem',
-          fontWeight: 600, color: disabled ? '#9ca3af' : '#111827',
-          outline: 'none', boxSizing: 'border-box',
-          cursor: disabled ? 'not-allowed' : 'text',
-          transition: 'border-color 0.2s',
-        }}
-        onFocus={e => { if (!disabled) e.target.style.borderColor = '#00d4d4'; }}
-        onBlur={e => { e.target.style.borderColor = disabled ? '#e5e7eb' : '#d1d5db'; }}
+        className={`w-full max-w-md px-4 py-2.5 rounded-[12px] text-[14px] font-semibold border transition-colors outline-none
+          ${disabled 
+            ? 'bg-slate-50 border-gray-100 text-slate-400 cursor-not-allowed' 
+            : 'bg-white border-gray-200 text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+          }`}
       />
     </div>
   );
@@ -69,7 +52,6 @@ export default function ProfileSettings() {
   const profileData = (user as any)?.customer_profile || (user as any)?.provider_profile || {};
   const [address, setAddress] = useState(profileData.address || '');
   const [city, setCity] = useState(profileData.city || '');
-  const [stateRegion, setStateRegion] = useState(profileData.state || '');
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -90,7 +72,6 @@ export default function ProfileSettings() {
       const pData = (user as any)?.customer_profile || (user as any)?.provider_profile || {};
       setAddress(pData.address || '');
       setCity(pData.city || '');
-      setStateRegion(pData.state || '');
     }
   }, [user]);
 
@@ -100,7 +81,7 @@ export default function ProfileSettings() {
     try {
       setIsSaving(true);
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      const { data } = await usersApi.updateProfile({ full_name: fullName, phone, address, city, state: stateRegion });
+      const { data } = await usersApi.updateProfile({ full_name: fullName, phone, address, city });
       updateUser(data.user);
       toast.success('Profile updated successfully!');
       setIsEditing(false);
@@ -128,179 +109,118 @@ export default function ProfileSettings() {
     }
   };
 
-  const displayName = user?.full_name || '';
-  const firstNameDisplay = displayName.split(' ')[0] || 'User';
-  const email = user?.email || '';
-  const fullPhone = user?.phone || '';
-  const fullLocation = [profileData.address, profileData.city, profileData.state].filter(Boolean).join(', ');
+  const displayName = user?.full_name || 'Anita Sharma';
+  const email = user?.email || 'anita@email.com';
+  const fullPhone = user?.phone || '+977 9812345678';
+  const displayCity = city || 'Kathmandu';
+  const displayAddress = address || 'Baneshwor, Ward 10';
 
-  /* ─── Shared styles ─── */
-  const pageStyle: React.CSSProperties = {
-    minHeight: '100%',
-    background: '#f3f6f8',
-    padding: '2rem 2.5rem',
-    fontFamily: "'Inter','Segoe UI',sans-serif",
-  };
-
-  const card: React.CSSProperties = {
-    background: 'white',
-    borderRadius: '20px',
-    border: '1px solid #e9ecef',
-    boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-  };
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
 
   return (
-    <div style={pageStyle}>
+    <div className="p-8 max-w-[1000px]">
 
       {/* ── Page header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
-        <div>
-          <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#00b0b0', marginBottom: '6px' }}>
-            Personal Workspace
-          </p>
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
-            Profile Details
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: '#6b7280', maxWidth: '440px', lineHeight: 1.6, margin: 0 }}>
-            Manage your identity and service locations. Keeping your information updated ensures a seamless Service Sathi experience.
-          </p>
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-[22px] font-extrabold text-slate-900">
+          My Profile
+        </h1>
         {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '7px',
-              padding: '10px 20px',
-              background: '#111827', border: 'none', borderRadius: '50px',
-              color: 'white', fontWeight: 700, fontSize: '0.8rem',
-              letterSpacing: '0.05em', textTransform: 'uppercase',
-              cursor: 'pointer', transition: 'background 0.2s',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#1f2937')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#111827')}
+            className="flex items-center justify-center px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[13px] rounded-[10px] transition-colors shadow-sm shadow-red-600/20"
           >
-            <Pencil size={13} /> Edit Profile
+            Edit Profile
           </button>
         )}
       </div>
 
       {/* ── Profile Card ── */}
-      <div style={{ ...card, padding: '32px' }}>
+      <div className="bg-white rounded-[20px] p-8 lg:p-10 shadow-[0_2px_10px_-3px_rgba(225,29,72,0.04)] border border-gray-100/60">
 
         {/* Avatar + name row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '32px' }}>
+        <div className="flex items-center gap-6 mb-10">
           {/* Avatar */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{
-              width: '110px', height: '110px',
-              borderRadius: '18px',
-              overflow: 'hidden',
-              background: '#e0fafa',
-              border: '3px solid white',
-              boxShadow: '0 4px 18px rgba(0,0,0,0.12)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {user?.profile_image
-                ? <img src={user.profile_image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontSize: '2.5rem', fontWeight: 800, color: '#00b0b0' }}>{firstNameDisplay[0]?.toUpperCase()}</span>
-              }
-            </div>
+          <div className="relative flex-shrink-0">
+            {user?.profile_image ? (
+              <img 
+                src={user.profile_image} 
+                alt="Avatar" 
+                className="w-[96px] h-[96px] rounded-full object-cover shadow-sm"
+              />
+            ) : (
+              <div className="w-[96px] h-[96px] rounded-full bg-red-600 text-white font-extrabold text-[32px] flex items-center justify-center shadow-sm shadow-red-600/20">
+                {initials}
+              </div>
+            )}
+            
             {/* Camera overlay button */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
+              disabled={isUploading || !isEditing}
               title="Change photo"
-              style={{
-                position: 'absolute', bottom: '-6px', right: '-6px',
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: '#00d4d4', border: '2px solid white',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: isUploading ? 'wait' : 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#00b0b0')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#00d4d4')}
+              className={`absolute bottom-0 right-0 w-[30px] h-[30px] rounded-full flex items-center justify-center border-2 border-white shadow-sm transition-colors
+                ${isEditing ? 'bg-red-600 hover:bg-red-700 cursor-pointer' : 'bg-slate-300 cursor-not-allowed'}
+              `}
             >
-              {isUploading ? <Loader2 size={14} color="white" style={{ animation: 'spin 1s linear infinite' }} /> : <Camera size={14} color="white" />}
+              {isUploading ? <Loader2 size={13} className="text-white animate-spin" /> : <Camera size={13} className="text-white" />}
             </button>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/jpeg,image/png,image/webp" />
           </div>
 
           {/* Name + badge */}
           <div>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: '0 0 8px', letterSpacing: '-0.3px' }}>
-              {firstNameDisplay}
+            <h2 className="text-[20px] font-extrabold text-slate-900 mb-1">
+              {displayName}
             </h2>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '0.65rem', fontWeight: 700,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: '#00b0b0', border: '1.5px solid #00d4d4',
-              borderRadius: '50px', padding: '4px 12px',
-            }}>
-              Verified Account
-            </span>
+            <p className="text-[13px] font-semibold text-slate-500 mb-2">
+              Member since March 2025
+            </p>
+            <div className="flex items-center gap-1.5 text-emerald-600">
+              <CheckCircle2 size={15} className="fill-emerald-100" />
+              <span className="text-[12px] font-extrabold tracking-wide">
+                Verified Account
+              </span>
+            </div>
           </div>
         </div>
 
         {/* ── View mode ── */}
         {!isEditing && (
-          <>
+          <div className="flex flex-col gap-2">
             <InfoRow label="Full Name" value={displayName} />
             <InfoRow label="Email Address" value={email} />
             <InfoRow label="Phone Number" value={fullPhone} />
-            {fullLocation && <InfoRow label="Location" value={fullLocation} />}
-          </>
+            <InfoRow label="City" value={displayCity} />
+            <InfoRow label="Address" value={displayAddress} />
+          </div>
         )}
 
         {/* ── Edit mode ── */}
         {isEditing && (
-          <form onSubmit={handleUpdateProfile}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px' }}>
-              <EditField label="First Name" value={firstName} onChange={setFirstName} />
-              <EditField label="Last Name" value={lastName} onChange={setLastName} />
-            </div>
+          <form onSubmit={handleUpdateProfile} className="flex flex-col gap-2 pt-4 border-t border-gray-50">
+            <EditField label="First Name" value={firstName} onChange={setFirstName} />
+            <EditField label="Last Name" value={lastName} onChange={setLastName} />
             <EditField label="Email Address" value={email} disabled />
             <EditField label="Phone Number" value={phone} onChange={setPhone} />
+            <EditField label="City" value={city} onChange={setCity} />
             <EditField label="Address" value={address} onChange={setAddress} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px' }}>
-              <EditField label="City" value={city} onChange={setCity} />
-              <EditField label="State" value={stateRegion} onChange={setStateRegion} />
-            </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <div className="flex items-center gap-3 mt-6 ml-[160px]">
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '10px 20px',
-                  background: 'white', border: '1.5px solid #e5e7eb',
-                  borderRadius: '10px', color: '#6b7280',
-                  fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-slate-600 font-bold text-[13px] rounded-[10px] hover:bg-slate-50 transition-colors"
               >
                 <X size={15} /> Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '10px 24px',
-                  background: '#00d4d4', border: 'none',
-                  borderRadius: '10px', color: 'white',
-                  fontWeight: 700, fontSize: '0.875rem',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 14px rgba(0,212,212,0.3)',
-                  transition: 'all 0.2s',
-                }}
+                className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[13px] rounded-[10px] transition-colors shadow-sm shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving
-                  ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</>
+                  ? <><Loader2 size={15} className="animate-spin" /> Saving</>
                   : <><Check size={15} /> Save Changes</>
                 }
               </button>
@@ -308,8 +228,6 @@ export default function ProfileSettings() {
           </form>
         )}
       </div>
-
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
