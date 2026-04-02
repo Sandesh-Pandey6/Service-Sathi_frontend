@@ -3,10 +3,13 @@ import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
   { label: 'Dashboard', icon: 'dashboard', path: '/user/dashboard' },
+  { label: 'My Bookings', icon: 'my bookings', path: '/user/bookings' },
   { label: 'Services', icon: 'services', path: '/user/services' },
-  { label: 'Bookings', icon: 'bookings', path: '/user/bookings' },
-  { label: 'Messages', icon: 'messages', path: '/user/messages' },
-  { label: 'Profile', icon: 'profile', path: '/user/profile' },
+  { label: 'Favourites', icon: 'favourites', path: '/user/favourites' },
+  { label: 'Messages', icon: 'messages', path: '/user/messages', badge: '2' }, // Demo badge from image
+  { label: 'My Profile', icon: 'profile', path: '/user/profile' },
+  { label: 'Settings', icon: 'settings', path: '/user/settings' },
+  { label: 'Help & Support', icon: 'support', path: '/user/support' },
 ];
 
 export default function UserLayout() {
@@ -14,14 +17,10 @@ export default function UserLayout() {
   
   return (
     <DashboardLayout config={{
-      roleLabel: 'Urban Concierge',
-      accentColor: '#00d4d4',
       navItems,
-      settingsPath: '/user/settings',
-
-      userName: user?.full_name || 'Customer',
-      userSubLabel: 'Premium Member',
-      userAvatarSeed: user?.full_name || 'user',
+      userName: user?.full_name || 'Anita Sharma',
+      userEmail: user?.email || 'anita@email.com',
+      userAvatarSeed: user?.full_name || 'Anita',
       userAvatarUrl: user?.profile_image || undefined,
     }} />
   );
