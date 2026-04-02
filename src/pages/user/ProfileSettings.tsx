@@ -8,8 +8,8 @@ import { usersApi } from '@/lib/api';
 function InfoRow({ label, value }: { label: string; value?: string }) {
   return (
     <div className="grid grid-cols-[160px_1fr] items-center py-4">
-      <p className="text-[13px] font-bold text-slate-400">{label}</p>
-      <p className="text-[14px] font-bold text-slate-900">{value || '—'}</p>
+      <p className="text-[13px] text-slate-400 font-normal">{label}</p>
+      <p className="text-[14px] text-slate-900 font-normal">{value || '—'}</p>
     </div>
   );
 }
@@ -24,13 +24,13 @@ function EditField({
 }) {
   return (
     <div className="grid grid-cols-[160px_1fr] items-center py-3">
-      <label className="text-[13px] font-bold text-slate-400">{label}</label>
+      <label className="text-[13px] text-slate-400 font-normal">{label}</label>
       <input
         type={type}
         value={value}
         onChange={e => onChange?.(e.target.value)}
         disabled={disabled}
-        className={`w-full max-w-md px-4 py-2.5 rounded-[12px] text-[14px] font-semibold border transition-colors outline-none
+        className={`w-full max-w-md px-4 py-2.5 rounded-[12px] text-[14px] font-normal border transition-colors outline-none
           ${disabled 
             ? 'bg-slate-50 border-gray-100 text-slate-400 cursor-not-allowed' 
             : 'bg-white border-gray-200 text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
@@ -122,13 +122,13 @@ export default function ProfileSettings() {
 
       {/* ── Page header ── */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-[22px] font-extrabold text-slate-900">
+        <h1 className="text-[22px] text-slate-900 font-normal">
           My Profile
         </h1>
         {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
-            className="flex items-center justify-center px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[13px] rounded-[10px] transition-colors shadow-sm shadow-red-600/20"
+            className="flex items-center justify-center px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-[13px] rounded-[10px] transition-colors shadow-sm shadow-red-600/20 font-normal"
           >
             Edit Profile
           </button>
@@ -149,7 +149,7 @@ export default function ProfileSettings() {
                 className="w-[96px] h-[96px] rounded-full object-cover shadow-sm"
               />
             ) : (
-              <div className="w-[96px] h-[96px] rounded-full bg-red-600 text-white font-extrabold text-[32px] flex items-center justify-center shadow-sm shadow-red-600/20">
+              <div className="w-[96px] h-[96px] rounded-full bg-red-600 text-white text-[32px] flex items-center justify-center shadow-sm shadow-red-600/20 font-normal">
                 {initials}
               </div>
             )}
@@ -170,15 +170,15 @@ export default function ProfileSettings() {
 
           {/* Name + badge */}
           <div>
-            <h2 className="text-[20px] font-extrabold text-slate-900 mb-1">
+            <h2 className="text-[20px] text-slate-900 mb-1 font-normal">
               {displayName}
             </h2>
-            <p className="text-[13px] font-semibold text-slate-500 mb-2">
+            <p className="text-[13px] text-slate-500 mb-2 font-normal">
               Member since March 2025
             </p>
             <div className="flex items-center gap-1.5 text-emerald-600">
               <CheckCircle2 size={15} className="fill-emerald-100" />
-              <span className="text-[12px] font-extrabold tracking-wide">
+              <span className="text-[12px] tracking-wide font-normal">
                 Verified Account
               </span>
             </div>
@@ -210,14 +210,14 @@ export default function ProfileSettings() {
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-slate-600 font-bold text-[13px] rounded-[10px] hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-slate-600 text-[13px] rounded-[10px] hover:bg-slate-50 transition-colors font-normal"
               >
                 <X size={15} /> Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[13px] rounded-[10px] transition-colors shadow-sm shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-[13px] rounded-[10px] transition-colors shadow-sm shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed font-normal"
               >
                 {isSaving
                   ? <><Loader2 size={15} className="animate-spin" /> Saving</>

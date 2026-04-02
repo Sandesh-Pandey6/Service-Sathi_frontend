@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import StatCard from '@/components/user/StatCard';
 import UpcomingBookingCard from '@/components/user/UpcomingBookingCard';
-import FavouriteProviderCard from '@/components/user/FavouriteProviderCard';
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function UserDashboard() {
@@ -95,10 +94,10 @@ export default function UserDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-12 gap-8">
+      <div className="flex flex-col gap-8">
         
-        {/* left col: Upcoming + History */}
-        <div className="col-span-12 lg:col-span-8 space-y-8">
+        {/* Main Content Area: Upcoming + History */}
+        <div className="w-full space-y-8">
           
           {/* Upcoming Bookings */}
           <div>
@@ -109,7 +108,7 @@ export default function UserDashboard() {
               </Link>
             </div>
             
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <UpcomingBookingCard 
                 providerInitials="RP"
                 providerName="Ram Prasad Shrestha"
@@ -154,84 +153,58 @@ export default function UserDashboard() {
               </Link>
             </div>
             
-            <div>
-              {/* Header */}
-              <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_1fr] gap-4 px-6 py-3.5 bg-white border-b border-gray-50">
-                {['PROVIDER', 'SERVICE', 'DATE', 'AMOUNT', 'STATUS'].map((h) => (
-                  <span key={h} className="text-[11px] font-extrabold text-slate-400 tracking-[0.1em]">
-                    {h}
-                  </span>
+            <div className="overflow-x-auto">
+              <div className="min-w-[800px]">
+                {/* Header */}
+                <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_1fr] gap-4 px-6 py-3.5 bg-white border-b border-gray-50">
+                  {['PROVIDER', 'SERVICE', 'DATE', 'AMOUNT', 'STATUS'].map((h) => (
+                    <span key={h} className="text-[11px] font-extrabold text-slate-400 tracking-[0.1em]">
+                      {h}
+                    </span>
+                  ))}
+                </div>
+                
+                {/* Rows */}
+                {[
+                  { init: 'DM', name: 'Dipesh Magar', id: '#4815', svc: 'Mechanic', icon: Wrench, date: '25 Mar', amount: 'Rs. 1,200', stat: 'Completed', statColor: 'bg-emerald-100/60 text-emerald-600', stars: 5, showRate: false },
+                  { init: 'AG', name: 'Anita Gurung', id: '#4810', svc: 'Electrician', icon: Zap, date: '18 Mar', amount: 'Rs. 600', stat: 'Completed', statColor: 'bg-emerald-100/60 text-emerald-600', stars: 0, showRate: true },
+                  { init: 'SR', name: 'Sunita Rai', id: '#4792', svc: 'Beautician', icon: Scissors, date: '10 Mar', amount: 'Rs. 700', stat: 'Completed', statColor: 'bg-emerald-100/60 text-emerald-600', stars: 4, showRate: false },
+                ].map((r, i) => (
+                  <div key={i} className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_1fr] gap-4 px-6 py-4 items-center bg-white border-b border-gray-50/50 last:border-0 hover:bg-slate-50/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-red-500 text-white font-extrabold text-[12px] flex items-center justify-center shrink-0 shadow-sm shadow-red-500/20">
+                        {r.init}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 text-[13px]">{r.name}</p>
+                        <p className="text-[11px] font-bold text-slate-400">{r.id}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-500">
+                      <r.icon size={12} className="text-slate-400" /> {r.svc}
+                    </div>
+                    <div className="text-[12px] font-bold text-slate-500">{r.date}</div>
+                    <div className="text-[13px] font-extrabold text-slate-900">{r.amount}</div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide ${r.statColor}`}>
+                        {r.stat}
+                      </span>
+                      {r.showRate ? (
+                        <button className="text-[11px] font-bold text-red-600 hover:text-red-700 tracking-wide ml-1 transition-colors">Rate</button>
+                      ) : r.stars > 0 ? (
+                        <div className="flex text-yellow-400 gap-[1px] ml-1">
+                          {Array.from({length: 5}).map((_, idx) => (
+                            <Star key={idx} size={10} className={idx < r.stars ? "fill-yellow-400" : "fill-slate-200 text-slate-200"} />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 ))}
               </div>
-              
-              {/* Rows */}
-              {[
-                { init: 'DM', name: 'Dipesh Magar', id: '#4815', svc: 'Mechanic', icon: Wrench, date: '25 Mar', amount: 'Rs. 1,200', stat: 'Completed', statColor: 'bg-emerald-100/60 text-emerald-600', stars: 5, showRate: false },
-                { init: 'AG', name: 'Anita Gurung', id: '#4810', svc: 'Electrician', icon: Zap, date: '18 Mar', amount: 'Rs. 600', stat: 'Completed', statColor: 'bg-emerald-100/60 text-emerald-600', stars: 0, showRate: true },
-                { init: 'SR', name: 'Sunita Rai', id: '#4792', svc: 'Beautician', icon: Scissors, date: '10 Mar', amount: 'Rs. 700', stat: 'Completed', statColor: 'bg-emerald-100/60 text-emerald-600', stars: 4, showRate: false },
-              ].map((r, i) => (
-                <div key={i} className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_1fr] gap-4 px-6 py-4 items-center bg-white border-b border-gray-50/50 last:border-0 hover:bg-slate-50/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-red-500 text-white font-extrabold text-[12px] flex items-center justify-center shrink-0 shadow-sm shadow-red-500/20">
-                      {r.init}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-900 text-[13px]">{r.name}</p>
-                      <p className="text-[11px] font-bold text-slate-400">{r.id}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-500">
-                    <r.icon size={12} className="text-slate-400" /> {r.svc}
-                  </div>
-                  <div className="text-[12px] font-bold text-slate-500">{r.date}</div>
-                  <div className="text-[13px] font-extrabold text-slate-900">{r.amount}</div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide ${r.statColor}`}>
-                      {r.stat}
-                    </span>
-                    {r.showRate ? (
-                      <button className="text-[11px] font-bold text-red-600 hover:text-red-700 tracking-wide ml-1 transition-colors">Rate</button>
-                    ) : r.stars > 0 ? (
-                      <div className="flex text-yellow-400 gap-[1px] ml-1">
-                        {Array.from({length: 5}).map((_, idx) => (
-                          <Star key={idx} size={10} className={idx < r.stars ? "fill-yellow-400" : "fill-slate-200 text-slate-200"} />
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
-
-        {/* right col: Favourites */}
-        <div className="col-span-12 lg:col-span-4">
-          <div className="bg-white rounded-[20px] shadow-[0_2px_10px_-3px_rgba(225,29,72,0.04)] border border-gray-100/80 p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[16px] font-extrabold text-slate-900">Favourites</h2>
-              <Link to="/user/favourites" className="text-[12px] font-extrabold text-red-600 hover:text-red-700 transition-colors">
-                See all
-              </Link>
-            </div>
-            
-            <div className="flex flex-col">
-              <FavouriteProviderCard 
-                providerInitials="RP"
-                providerName="Ram Prasad Shrestha"
-                rating="4.9"
-                service="Electrician"
-              />
-              <FavouriteProviderCard 
-                providerInitials="ST"
-                providerName="Sita Tamang"
-                rating="4.8"
-                service="Beautician"
-              />
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );
