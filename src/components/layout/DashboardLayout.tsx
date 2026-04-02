@@ -153,10 +153,12 @@ export default function DashboardLayout({ config }: { config: DashboardConfig })
         <header className="h-[88px] bg-white border-b border-gray-100 flex items-center justify-between px-8 flex-shrink-0">
           
           {/* Left Title Area */}
-          <div>
-            <h1 className="text-[18px] font-extrabold text-slate-900 leading-tight">Dashboard</h1>
-            <p className="text-[12px] font-semibold text-slate-400 mt-0.5">{getDayStr()}</p>
-          </div>
+           <div>
+             <h1 className="text-[18px] font-extrabold text-slate-900 leading-tight">
+               {config.navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Dashboard'}
+             </h1>
+             <p className="text-[12px] font-semibold text-slate-400 mt-0.5">{getDayStr()}</p>
+           </div>
 
           {/* Right Area */}
           <div className="flex items-center gap-6">

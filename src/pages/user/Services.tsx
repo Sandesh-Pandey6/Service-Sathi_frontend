@@ -2,201 +2,217 @@ import { Link } from 'react-router-dom';
 import {
   Wrench,
   Zap,
-  Sparkles,
   Wind,
-  Paintbrush,
-  Bug,
-  ArrowRight,
+  Scissors,
   Star,
   Hammer,
   PaintBucket,
-  TreePine,
-  Wifi,
+  Search,
+  MapPin,
+  ChevronDown,
+  Droplets,
+  Car,
+  Leaf
 } from 'lucide-react';
 
 /* ── Service Categories ── */
 const categories = [
-  { id: 1, name: 'Plumbing', icon: Wrench, color: '#00b0b0' },
-  { id: 2, name: 'Electrical', icon: Zap, color: '#00b0b0' },
-  { id: 3, name: 'Cleaning', icon: Sparkles, color: '#00b0b0' },
-  { id: 4, name: 'HVAC', icon: Wind, color: '#00b0b0' },
-  { id: 5, name: 'Painting', icon: Paintbrush, color: '#00b0b0' },
-  { id: 6, name: 'Pest Control', icon: Bug, color: '#00b0b0' },
+  { id: 1, name: 'Electrician', icon: Zap, count: 24, bg: 'bg-yellow-50/50', border: 'border-yellow-200/60', text: 'text-yellow-500', outer: 'border-yellow-200' },
+  { id: 2, name: 'Plumber', icon: Droplets, count: 18, bg: 'bg-blue-50/50', border: 'border-blue-200/60', text: 'text-blue-500', outer: 'border-blue-200' },
+  { id: 3, name: 'Beautician', icon: Scissors, count: 15, bg: 'bg-pink-50/50', border: 'border-pink-200/60', text: 'text-pink-500', outer: 'border-pink-200' },
+  { id: 4, name: 'Mechanic', icon: Car, count: 12, bg: 'bg-slate-50/50', border: 'border-slate-200/60', text: 'text-slate-500', outer: 'border-slate-200' },
+  { id: 5, name: 'Carpenter', icon: Hammer, count: 9, bg: 'bg-orange-50/50', border: 'border-orange-200/60', text: 'text-orange-500', outer: 'border-orange-200' },
+  { id: 6, name: 'AC Repair', icon: Wind, count: 11, bg: 'bg-cyan-50/50', border: 'border-cyan-200/60', text: 'text-cyan-500', outer: 'border-cyan-200' },
+  { id: 7, name: 'Painter', icon: PaintBucket, count: 8, bg: 'bg-purple-50/50', border: 'border-purple-200/60', text: 'text-purple-500', outer: 'border-purple-200' },
+  { id: 8, name: 'Appliance Repair', icon: Wrench, count: 13, bg: 'bg-emerald-50/50', border: 'border-emerald-200/60', text: 'text-emerald-500', outer: 'border-emerald-200' },
+  { id: 9, name: 'Gardener', icon: Leaf, count: 6, bg: 'bg-lime-50/50', border: 'border-lime-200/60', text: 'text-lime-500', outer: 'border-lime-200' },
 ];
 
-/* ── Recommended Providers ── */
-const recommended = [
-  {
-    id: 1,
-    name: 'VoltMasters Elite',
-    desc: 'Master electricians specializing in smart home integration and aesthetic lighting design.',
-    price: 120,
-    rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&q=80',
-  },
-  {
-    id: 2,
-    name: 'Pristine Concierge',
-    desc: 'Five-star hotel grade cleaning for luxury residences. Eco-friendly products and meticulous attention to detail.',
-    price: 85,
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80',
-  },
-  {
-    id: 3,
-    name: 'Flow Masterworks',
-    desc: 'Expert leak detection and artisanal pipe installation with 24/7 priority support for members.',
-    price: 110,
-    rating: 5.0,
-    image: 'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=400&q=80',
-  },
-];
-
-/* ── Other Services ── */
-const otherServices = [
-  { id: 1, name: 'Carpentry Fixes', desc: 'Custom furniture repair and wood finishing.', price: 50, icon: Hammer },
-  { id: 2, name: 'Wall Painting', desc: 'Professional indoor and outdoor painting.', price: 90, icon: PaintBucket },
-  { id: 3, name: 'Garden Care', desc: 'Landscape maintenance and lawn mowing.', price: 65, icon: TreePine },
-  { id: 4, name: 'Tech Support', desc: 'Wi-Fi setup and device troubleshooting.', price: 40, icon: Wifi },
+/* ── Top Rated Providers ── */
+const topProviders = [
+  { id: 1, initials: 'RP', name: 'Ram Prasad Shrestha', service: 'Electrician', location: 'Kathmandu', rating: 4.9, reviews: 134, price: 800 },
+  { id: 2, initials: 'ST', name: 'Sita Tamang', service: 'Beautician', location: 'Lalitpur', rating: 4.8, reviews: 112, price: 500 },
+  { id: 3, initials: 'PS', name: 'Priya Shrestha', service: 'Beautician', location: 'Kathmandu', rating: 4.9, reviews: 201, price: 700 },
 ];
 
 export default function UserServices() {
   return (
-    <div className="p-6 space-y-8">
-      {/* ── Explore Categories ── */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="text-[11px] font-bold text-[#00b0b0] uppercase tracking-[0.2em] mb-2">
-              Premium Solutions
-            </p>
-            <h1 className="text-3xl font-extrabold text-slate-900">Explore Categories</h1>
-          </div>
-          <Link
-            to="#"
-            className="flex items-center gap-1 text-xs font-bold text-[#00b0b0] hover:text-[#009999] transition-colors"
-          >
-            View All <ArrowRight size={14} />
-          </Link>
-        </div>
+    <div style={{ padding: '32px', width: '100%', boxSizing: 'border-box' }}>
 
-        <div className="grid grid-cols-6 gap-4 mt-6">
-          {categories.map((cat) => {
-            const IconComp = cat.icon;
-            return (
-              <button
-                key={cat.id}
-                className="group bg-white rounded-2xl p-5 shadow-sm hover:shadow-md border border-gray-100 hover:border-[#00d4d4] transition-all flex flex-col items-center gap-3"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-[#f5fefe] group-hover:bg-[#e0fafa] flex items-center justify-center transition-colors">
-                  <IconComp size={24} className="text-[#00b0b0] group-hover:text-[#009999] transition-colors" />
-                </div>
-                <span className="text-xs font-bold text-slate-700 group-hover:text-[#00b0b0] transition-colors">
-                  {cat.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      {/* ── Header ── */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: '4px' }}>
+          Browse Services
+        </h1>
+        <p style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, margin: 0 }}>
+          Choose a category to find verified professionals near you
+        </p>
       </div>
 
-      {/* ── Recommended Near You ── */}
-      <div>
-        <p className="text-[11px] font-bold text-[#00b0b0] uppercase tracking-[0.2em] mb-2">
-          Curated Selection
-        </p>
-        <h2 className="text-2xl font-extrabold text-slate-900 mb-5">Recommended Near You</h2>
+      {/* ── Search Bar — single unified row ── */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        marginBottom: '32px',
+        boxSizing: 'border-box',
+        minWidth: 0,
+      }}>
+        {/* Left: search input */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          flex: '1 1 0%',
+          padding: '11px 16px',
+          minWidth: 0,
+        }}>
+          <Search size={18} color="#94a3b8" style={{ marginRight: '10px', flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Search services or providers..."
+            style={{
+              flex: 1,
+              minWidth: 0,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: '14px',
+              color: '#334155',
+              fontWeight: 500,
+              fontFamily: 'inherit',
+            }}
+          />
+        </div>
 
-        <div className="grid grid-cols-3 gap-5">
-          {recommended.map((provider) => (
-            <div
-              key={provider.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all group border border-gray-100"
+        {/* Divider */}
+        <div style={{ width: '1px', height: '36px', background: '#e2e8f0', flexShrink: 0 }} />
+
+        {/* Right: location button */}
+        <button
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '11px 20px',
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 700,
+            color: '#334155',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            fontFamily: 'inherit',
+          }}
+        >
+          <MapPin size={16} color="#ef4444" />
+          All Locations
+          <ChevronDown size={14} color="#94a3b8" strokeWidth={3} style={{ marginLeft: '2px' }} />
+        </button>
+      </div>
+
+      {/* ── Categories Grid ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '20px',
+        marginBottom: '40px',
+      }}>
+        {categories.map((cat) => {
+          const IconComp = cat.icon;
+          return (
+            <Link
+              key={cat.id}
+              to={`/user/services/${cat.id}`}
+              className={`flex flex-col items-start justify-between p-6 rounded-[20px] border ${cat.bg} ${cat.border} hover:shadow-sm transition-all min-h-[140px] group`}
+              style={{ textDecoration: 'none' }}
             >
-              {/* Image */}
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={provider.image}
-                  alt={provider.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                {/* Rating badge */}
-                <div className="absolute top-3 right-3 bg-[#00d4d4] text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-md">
-                  <Star size={11} className="fill-white" />
-                  {provider.rating}
+              <div className={`w-10 h-10 rounded-full border ${cat.outer} flex items-center justify-center bg-transparent mt-1 ml-1`}>
+                <IconComp size={18} className={cat.text} strokeWidth={1.5} />
+              </div>
+              <div className="mt-auto ml-1">
+                <h3 className="text-[15px] font-bold text-slate-900 mb-1">{cat.name}</h3>
+                <div className="flex items-center gap-2 text-[12px] font-medium text-slate-500">
+                  <span className={`w-[5px] h-[5px] rounded-full ${cat.text.replace('text-', 'bg-')}`} />
+                  {cat.count} providers
                 </div>
               </div>
+            </Link>
+          );
+        })}
+      </div>
 
-              {/* Content */}
-              <div className="p-5">
-                <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{provider.name}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed mb-4 line-clamp-3">
-                  {provider.desc}
-                </p>
+      {/* ── Top Rated Providers ── */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Top Rated Providers</h2>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: '#94a3b8' }}>Across all categories</span>
+        </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Starting At</p>
-                    <p className="text-lg font-extrabold text-slate-900">
-                      <span className="text-sm font-bold text-slate-500 mr-0.5">रू</span>
-                      {provider.price}
-                    </p>
-                  </div>
-                  <Link
-                    to="/user/bookings/new"
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-md hover:shadow-lg"
-                    style={{ backgroundColor: '#00d4d4' }}
-                  >
-                    Book Now
-                  </Link>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {topProviders.map((provider) => (
+            <div
+              key={provider.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #f1f5f9',
+                padding: '20px 24px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{
+                  width: '46px', height: '46px', borderRadius: '50%',
+                  background: '#dc2626', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', color: '#fff', fontWeight: 700,
+                  fontSize: '15px', flexShrink: 0,
+                }}>
+                  {provider.initials}
                 </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', margin: 0 }}>{provider.name}</h3>
+                    <span style={{
+                      background: '#fef2f2', color: '#dc2626', fontSize: '10px',
+                      fontWeight: 700, padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.05em',
+                    }}>Top Rated</span>
+                  </div>
+                  <p style={{ fontSize: '12px', fontWeight: 500, color: '#64748b', margin: '0 0 6px 0' }}>
+                    {provider.service} · {provider.location}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Star size={14} fill="#facc15" color="#facc15" />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{provider.rating}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 500, color: '#94a3b8' }}>({provider.reviews} reviews)</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Rs. {provider.price}</div>
+                <Link
+                  to="/user/bookings/new"
+                  style={{
+                    background: '#dc2626', color: '#fff', fontSize: '13px', fontWeight: 700,
+                    padding: '6px 24px', borderRadius: '8px', textDecoration: 'none',
+                    display: 'inline-block',
+                  }}
+                >
+                  Book
+                </Link>
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* ── Other Available Services ── */}
-      <div>
-        <p className="text-[11px] font-bold text-[#00b0b0] uppercase tracking-[0.2em] mb-2">
-          Expanded Catalog
-        </p>
-        <h2 className="text-2xl font-extrabold text-slate-900 mb-5">Other Available Services</h2>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="grid grid-cols-4 divide-x divide-gray-100">
-            {otherServices.map((svc) => {
-              const IconComp = svc.icon;
-              return (
-                <div
-                  key={svc.id}
-                  className="p-5 hover:bg-[#fafffe] transition-colors group"
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#f0fefe] flex items-center justify-center flex-shrink-0">
-                      <IconComp size={18} className="text-[#00b0b0]" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">{svc.name}</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{svc.desc}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <p className="text-base font-extrabold text-slate-800">
-                      <span className="text-xs font-bold text-slate-400 mr-0.5">रू</span>
-                      {svc.price}
-                    </p>
-                    <Link
-                      to="/user/bookings/new"
-                      className="text-xs font-bold text-[#00b0b0] hover:text-[#009999] transition-colors"
-                    >
-                      Book
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
     </div>
