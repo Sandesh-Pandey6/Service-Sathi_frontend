@@ -5,7 +5,8 @@ const navItems = [
   { label: 'Dashboard', icon: 'dashboard', path: '/user/dashboard' },
   { label: 'My Bookings', icon: 'my bookings', path: '/user/bookings' },
   { label: 'Services', icon: 'services', path: '/user/services' },
-  { label: 'Messages', icon: 'messages', path: '/user/messages', badge: '2' }, // Demo badge from image
+  { label: 'Favourites', icon: 'favourites', path: '/user/favourites' },
+  { label: 'Messages', icon: 'messages', path: '/user/messages', badge: '2' },
   { label: 'My Profile', icon: 'profile', path: '/user/profile' },
   { label: 'Settings', icon: 'settings', path: '/user/settings' },
   { label: 'Help & Support', icon: 'support', path: '/user/support' },

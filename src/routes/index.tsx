@@ -11,6 +11,7 @@ import UserServices from '@/pages/user/Services';
 import NewBooking from '@/pages/user/NewBooking';
 import ProfileSettings from '@/pages/user/ProfileSettings';
 import UserSettings from '@/pages/user/UserSettings';
+import UserBookings from '@/pages/user/UserBookings';
 
 import AdminLayout from '@/components/layout/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -46,22 +47,6 @@ const ServicesPage = () => (
 
 import UserMessages from '@/pages/user/Messages';
 
-/* Placeholder for Bookings list page */
-const UserBookings = () => (
-  <div className="p-6">
-    <p className="text-[11px] font-bold text-[#00b0b0] uppercase tracking-[0.2em] mb-2">Booking Management</p>
-    <h1 className="text-3xl font-extrabold text-slate-900 mb-2">My Bookings</h1>
-    <p className="text-slate-400 text-sm">Track and manage all your service bookings.</p>
-    <div className="bg-white rounded-2xl p-8 mt-6 shadow-sm border border-gray-100 text-center">
-      <div className="w-16 h-16 mx-auto rounded-2xl bg-[#f0fefe] flex items-center justify-center mb-4">
-        <span className="text-3xl">📋</span>
-      </div>
-      <p className="font-bold text-slate-700">No bookings yet</p>
-      <p className="text-xs text-slate-400 mt-1">Book a service to see your bookings here.</p>
-    </div>
-  </div>
-);
-
 export const routes = [
   {
     path: '/',
@@ -84,6 +69,7 @@ export const routes = [
       { path: 'services', element: <UserServices /> },
       { path: 'bookings', element: <UserBookings /> },
       { path: 'bookings/new', element: <NewBooking /> },
+      { path: 'favourites', element: <div className="p-8"><h1 className="text-xl font-bold text-slate-900 mb-2">My Favourites</h1><p className="text-slate-500 text-sm">Your favourite service providers will appear here.</p></div> },
       { path: 'messages', element: <UserMessages /> },
       { path: 'profile', element: <ProfileSettings /> },
       { path: 'settings', element: <UserSettings /> },
