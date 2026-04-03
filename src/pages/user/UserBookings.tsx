@@ -568,7 +568,7 @@ function ViewDetailsModal({ booking, onClose }: { booking: Booking; onClose: () 
               }}
             >
               <p style={{ fontSize: '12px', fontWeight: 700, color: '#92400e', margin: '0 0 4px' }}>
-                📝 Notes
+                 Notes
               </p>
               <p style={{ fontSize: '13px', color: '#78350f', margin: 0, lineHeight: 1.5 }}>
                 {booking.notes}
@@ -588,7 +588,7 @@ function ViewDetailsModal({ booking, onClose }: { booking: Booking; onClose: () 
               }}
             >
               <p style={{ fontSize: '12px', fontWeight: 700, color: '#991b1b', margin: '0 0 4px' }}>
-                ⓘ Cancellation Reason
+                 Cancellation Reason
               </p>
               <p style={{ fontSize: '13px', color: '#b91c1c', margin: 0, lineHeight: 1.5 }}>
                 {booking.cancellationReason}
