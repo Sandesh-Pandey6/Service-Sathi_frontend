@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { SimpleStatCard } from '@/components/admin/SimpleStatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { Eye, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -146,12 +146,14 @@ export default function AdminProviders() {
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><span className="text-sm font-medium text-slate-500">{new Date(p.created_at).toLocaleDateString()}</span></td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><StatusBadge status={isVerified ? 'verified' : 'pending'} /></td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button title="View Documents" onClick={() => openDocs(p.provider_profile?.documents)} className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"><Eye size={16} /></button>
+                      <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => openDocs(p.provider_profile?.documents)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                          View Documents
+                        </button>
                         {!isVerified && (
                           <>
-                            <button title="Verify" onClick={() => handleVerify(p.id)} className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><CheckCircle size={16} /></button>
-                            <button title="Reject" onClick={() => { setSelectedUserId(p.id); setRejectModalOpen(true); }} className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"><XCircle size={16} /></button>
+                            <button onClick={() => handleVerify(p.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors">Approve</button>
+                            <button onClick={() => { setSelectedUserId(p.id); setRejectModalOpen(true); }} className="px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors">Reject</button>
                           </>
                         )}
                       </div>
@@ -206,7 +208,9 @@ export default function AdminProviders() {
                       {key.replace(/_/g, ' ')}
                     </div>
                     {url.match(/\.(jpeg|jpg|gif|png)$/) != null || url.includes('cloudinary') ? (
-                      <img src={url} alt={key} className="w-full h-auto object-contain bg-gray-100 max-h-[400px]" />
+                      <a href={url} target="_blank" rel="noreferrer" title="Click to view full image">
+                        <img src={url} alt={key} className="w-full h-auto object-contain bg-gray-100 max-h-[400px] hover:opacity-90 transition-opacity cursor-pointer" />
+                      </a>
                     ) : (
                       <div className="p-6 text-center">
                         <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">View Document</a>

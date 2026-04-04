@@ -1,24 +1,38 @@
-import { useState, useEffect } from 'react';
-import { authApi } from '@/lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { authApi, providerApi, servicesApi, usersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function ProviderProfile() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Services state
+  const [providerServices, setProviderServices] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  
+  // Modal state
+  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+  const [newServiceCategoryId, setNewServiceCategoryId] = useState('');
+  const [newServiceRate, setNewServiceRate] = useState('');
+  const [isAddingService, setIsAddingService] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       try {
         const { data } = await authApi.me();
-        setUser({
-          ...data.user,
-          full_name: 'Kamal Prasad Shrestha',
-          email: 'kamal@example.com',
-          phone: '+977 98XXXXXXXX',
-          city: 'Kathmandu'
-        });
+        setUser(data.user);
+
+        if (data.user?.provider_profile?.id) {
+          const [servicesRes, categoriesRes] = await Promise.all([
+            providerApi.getServices(data.user.provider_profile.id),
+            servicesApi.listCategories()
+          ]);
+          setProviderServices(Array.isArray(servicesRes.data) ? servicesRes.data : (servicesRes.data.services || []));
+          setCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : (categoriesRes.data.categories || []));
+        }
+
       } catch (err) {
-        toast.error('Failed to load profile');
+        toast.error('Failed to load profile details');
       } finally {
         setLoading(false);
       }
@@ -26,7 +40,117 @@ export default function ProviderProfile() {
     load();
   }, []);
 
+  const handleAddService = async () => {
+    if (!newServiceCategoryId || !newServiceRate) {
+      toast.error('Please select a category and specify a rate');
+      return;
+    }
+    const cat = categories.find((c: any) => c.id === newServiceCategoryId);
+    if (!cat) return;
+
+    try {
+      setIsAddingService(true);
+      await servicesApi.create({
+        category_id: cat.id,
+        title: cat.name,
+        description: `Professional ${cat.name} services.`,
+        price: Number(newServiceRate),
+      });
+      toast.success('Service added successfully!');
+      
+      // Reload provider services
+      const res = await providerApi.getServices(user.provider_profile.id);
+      setProviderServices(Array.isArray(res.data) ? res.data : (res.data.services || []));
+      
+      setShowAddServiceModal(false);
+      setNewServiceRate('');
+      setNewServiceCategoryId('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to add service');
+    } finally {
+      setIsAddingService(false);
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this service?')) return;
+    try {
+      await servicesApi.delete(id);
+      toast.success('Service deleted successfully');
+      setProviderServices(prev => prev.filter(s => s.id !== id));
+    } catch (err: any) {
+      toast.error('Failed to delete service');
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+  const handleDocumentSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingDoc(true);
+      const formData = new FormData();
+      formData.append('document', file);
+      
+      const newDocKey = 'certificate_' + Date.now();
+      formData.append('doc_type', newDocKey);
+
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+      const res = await fetch(`${BASE_URL}/auth/upload-document`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+      const currentDocs = { ...(user?.provider_profile?.documents || {}) };
+      currentDocs[data.doc_type || newDocKey] = data.url;
+
+      await usersApi.updateProfile({ documents: currentDocs });
+      toast.success('Document uploaded successfully');
+      
+      setUser({
+        ...user,
+        provider_profile: {
+          ...user.provider_profile,
+          documents: currentDocs,
+        }
+      });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload document');
+    } finally {
+      setIsUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteDocument = async (key: string) => {
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
+    try {
+      const currentDocs = { ...(user?.provider_profile?.documents || {}) };
+      delete currentDocs[key];
+      
+      await usersApi.updateProfile({ documents: currentDocs });
+      toast.success('Document deleted');
+      
+      setUser({
+        ...user,
+        provider_profile: {
+          ...user.provider_profile,
+          documents: currentDocs,
+        }
+      });
+    } catch (err: any) {
+      toast.error('Failed to delete document');
+    }
+  };
+
   if (loading) return <div className="p-6 text-slate-500 font-medium">Loading profile...</div>;
+
+    const initials = user?.full_name?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'U';
 
   return (
     <div className="space-y-6 max-w-[720px] pb-12">
@@ -36,8 +160,12 @@ export default function ProviderProfile() {
         <h2 className="text-[15px] font-extrabold text-slate-900 mb-6">Profile Photo</h2>
         <div className="flex items-center gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-2xl bg-[#eff0fe] flex items-center justify-center text-indigo-600 font-extrabold text-[28px]">
-              KP
+            <div className="w-24 h-24 rounded-2xl bg-[#eff0fe] flex items-center justify-center text-indigo-600 font-extrabold text-[28px] overflow-hidden">
+              {user?.profile_image ? (
+                <img src={user.profile_image} alt={user.full_name} className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
             <button className="absolute -bottom-2 -right-2 w-[34px] h-[34px] bg-indigo-600 rounded-full flex items-center justify-center text-white border-4 border-white hover:bg-indigo-700 transition">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,14 +175,16 @@ export default function ProviderProfile() {
             </button>
           </div>
           <div>
-            <h3 className="text-[16px] font-extrabold text-slate-900 mb-1">{user?.full_name || 'Kamal Prasad Shrestha'}</h3>
-            <p className="text-[13px] font-medium text-slate-500 mb-2">Electrician - Kathmandu</p>
+            <h3 className="text-[16px] font-extrabold text-slate-900 mb-1">{user?.full_name}</h3>
+            <p className="text-[13px] font-medium text-slate-500 mb-2">
+              {user?.provider_profile?.categories?.[0] || 'Service Provider'} - {user?.provider_profile?.city || 'No City'}
+            </p>
             <div className="flex items-center gap-1.5 text-[13px]">
               <div className="flex text-amber-400 text-sm">
                 <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
               </div>
-              <span className="font-bold text-slate-700 ml-1">4.9</span>
-              <span className="text-slate-400 font-medium">(47 reviews)</span>
+              <span className="font-bold text-slate-700 ml-1">{user?.provider_profile?.rating?.toFixed(1) || '0.0'}</span>
+              <span className="text-slate-400 font-medium">({user?.provider_profile?.total_reviews || 0} reviews)</span>
             </div>
           </div>
         </div>
@@ -92,7 +222,7 @@ export default function ProviderProfile() {
             <label className="block text-[13px] font-semibold text-slate-700 mb-2">City</label>
             <input 
               type="text" 
-              defaultValue={user?.city || 'Kathmandu'} 
+              defaultValue={user?.provider_profile?.city || ''} 
               className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-[14px] font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 transition-all" 
             />
           </div>
@@ -106,12 +236,12 @@ export default function ProviderProfile() {
         <div className="mb-8">
           <label className="block text-[13px] font-semibold text-slate-700 mb-3">Services Offered</label>
           <div className="flex flex-wrap gap-2.5">
-            {['Electrician', 'Wiring', 'Circuit Repair', 'Outdoor Lighting'].map((s) => (
-               <span key={s} className="px-4 py-1.5 bg-[#eff0fe] text-indigo-600 rounded-full text-[12px] font-bold">
-                 {s}
+            {providerServices.length > 0 ? providerServices.map((s: any) => (
+               <span key={s.id} className="px-4 py-1.5 bg-[#eff0fe] text-indigo-600 rounded-full text-[12px] font-bold">
+                 {s.title || s.category?.name}
                </span>
-            ))}
-            <button className="px-4 py-1.5 bg-white border border-gray-200 text-slate-400 hover:text-slate-500 rounded-full text-[12px] font-bold hover:bg-slate-50 transition flex items-center gap-1.5">
+            )) : <span className="text-slate-400 text-sm">No services added yet</span>}
+            <button onClick={() => setShowAddServiceModal(true)} type="button" className="px-4 py-1.5 bg-white border border-gray-200 text-slate-400 hover:text-slate-500 rounded-full text-[12px] font-bold hover:bg-slate-50 transition flex items-center gap-1.5 cursor-pointer">
               <span className="text-sm leading-none -mt-0.5">+</span> Add
             </button>
           </div>
@@ -123,25 +253,25 @@ export default function ProviderProfile() {
             <p className="text-[12px] font-medium text-slate-400">Set your own rate for each service you offer</p>
           </div>
           <div className="space-y-3">
-             {[
-               { id: 1, name: 'Electrician', rate: '800' },
-               { id: 2, name: 'Wiring', rate: '1200' },
-               { id: 3, name: 'Circuit Repair', rate: '1500' },
-               { id: 4, name: 'Outdoor Lighting', rate: '2000' }
-             ].map((svc) => (
+             {providerServices.length > 0 ? providerServices.map((svc: any) => (
                <div key={svc.id} className="border border-gray-200 rounded-[14px] p-2 flex items-center justify-between gap-4 w-full">
-                 <div className="px-5 py-2 bg-[#eff0fe] text-indigo-600 rounded-[10px] text-[13px] font-bold w-[140px] text-center">
-                   {svc.name}
+                 <div className="px-5 py-2 bg-[#eff0fe] text-indigo-600 rounded-[10px] text-[13px] font-bold w-[140px] text-center truncate">
+                   {svc.title || svc.category?.name}
                  </div>
                  <div className="flex items-center gap-2 flex-1">
                    <span className="text-slate-400 text-[13px] font-bold w-6 text-right">Rs</span>
-                   <span className="text-slate-800 text-[14px] font-extrabold">{svc.rate}</span>
+                   <span className="text-slate-800 text-[14px] font-extrabold">{svc.price}</span>
                  </div>
-                 <div className="text-slate-400 text-[12px] font-medium pr-4 w-20 text-right">
-                   per visit
+                  <div className="text-slate-400 text-[12px] font-medium pr-4 w-20 text-right">
+                   {svc.price_type === 'hourly' ? 'per hour' : 'fixed'}
                  </div>
+                 <button onClick={() => handleDeleteService(svc.id)} className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center shrink-0" title="Delete service">
+                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                   </svg>
+                 </button>
                </div>
-             ))}
+             )) : <p className="text-[13px] text-slate-400 font-medium">No active services. Add one above.</p>}
           </div>
         </div>
 
@@ -149,7 +279,8 @@ export default function ProviderProfile() {
           <label className="block text-[13px] font-semibold text-slate-700 mb-2">Bio</label>
           <textarea 
             className="w-full bg-white border border-gray-200 rounded-xl p-4 text-[13px] text-slate-700 font-medium outline-none focus:ring-2 focus:ring-indigo-100 transition-all resize-none min-h-[100px]"
-            defaultValue="Licensed electrician with 8+ years of experience in residential and commercial wiring, circuit repairs, and electrical safety inspections across Kathmandu Valley."
+            defaultValue={user?.provider_profile?.bio || ''}
+            placeholder="Tell us about your services..."
           ></textarea>
         </div>
       </div>
@@ -158,67 +289,58 @@ export default function ProviderProfile() {
       <div className="bg-white rounded-[20px] p-7 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] border border-gray-100/60">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="text-[15px] font-extrabold text-slate-900 mb-1">Certificates</h2>
-            <p className="text-[12px] font-medium text-slate-400">Upload your skill certificates to boost trust and get more bookings</p>
+            <h2 className="text-[15px] font-extrabold text-slate-900 mb-1">Documents</h2>
+            <p className="text-[12px] font-medium text-slate-400">View and manage your verification documents</p>
           </div>
           <div className="px-3.5 py-1.5 bg-[#eff0fe] text-indigo-600 rounded-full text-[11px] font-bold tracking-wide mt-1">
-            1/2 uploaded
+            {Object.keys(user?.provider_profile?.documents || {}).length} uploaded
           </div>
         </div>
 
         <div className="space-y-4">
-          {/* Uploaded Certificate */}
-          <div className="border border-emerald-400 border-dashed bg-emerald-50/40 rounded-2xl p-4 flex items-center justify-between transition-all hover:bg-emerald-50/60">
-            <div className="flex items-center gap-4">
-              <div className="w-[42px] h-[42px] rounded-full bg-emerald-100/60 flex items-center justify-center text-emerald-500 shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
+          {(Object.entries(user?.provider_profile?.documents || {}) as [string, any][]).map(([key, url]) => (
+            url && (
+            <div key={key} className="border border-emerald-400 border-dashed bg-emerald-50/40 rounded-2xl p-4 flex items-center justify-between transition-all hover:bg-emerald-50/60">
+              <div className="flex items-center gap-4">
+                <div className="w-[42px] h-[42px] rounded-full bg-emerald-100/60 flex items-center justify-center text-emerald-500 shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-bold text-slate-900 mb-0.5 capitalize">{key.replace('_', ' ')}</h4>
+                  <a href={url as string} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                    View Document
+                  </a>
+                </div>
               </div>
-              <div>
-                <h4 className="text-[13px] font-bold text-slate-900 mb-0.5">Trade License / Skill Certificate</h4>
-                <p className="text-[12px] font-semibold text-emerald-600">
-                  trade_license.pdf <span className="text-slate-400 font-medium mx-1">-</span> <span className="text-slate-400 font-medium cursor-pointer hover:text-slate-600 transition">Click to remove</span>
-                </p>
+              <div className="flex items-center gap-4 pl-4 border-l border-emerald-200/50">
+                <span className="text-[12px] font-bold text-emerald-600">Uploaded</span>
+                <button onClick={() => handleDeleteDocument(key)} className="w-8 h-8 rounded-full bg-red-50/50 text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-4 pl-4 border-l border-emerald-200/50">
-              <span className="text-[12px] font-bold text-emerald-600">Uploaded</span>
-              <button className="text-slate-300 hover:text-red-500 transition-colors p-1">
-                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
+            )
+          ))}
 
-          {/* Pending Certificate */}
-          <div className="border border-gray-200 border-dashed rounded-2xl p-4 flex items-center justify-between transition-all hover:bg-slate-50 cursor-pointer group">
-            <div className="flex items-center gap-4">
-              <div className="w-[42px] h-[42px] rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-slate-200 transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-[13px] font-bold text-slate-900 mb-0.5">Electrical Work Permit</h4>
-                <p className="text-[12px] font-medium text-slate-400">
-                  PDF, JPG or PNG <span className="mx-1">·</span> Max 5 MB <span className="mx-1">-</span> <span className="text-slate-500 group-hover:text-indigo-600 transition-colors">Click to upload</span>
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 pl-4 border-l border-gray-100">
-              <span className="text-[12px] font-bold text-slate-400">Pending</span>
-              <button className="text-slate-200 hover:text-slate-400 transition-colors p-1">
-                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <button className="w-full py-3.5 border border-[#eff0fe] border-dashed rounded-2xl text-[13px] font-bold text-indigo-600 bg-[#fbfbfe] hover:bg-[#eff0fe] transition-colors flex items-center justify-center gap-2 mt-4">
-            <span className="text-lg leading-none -mt-1">+</span> Add Certificate
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleDocumentSelect} 
+            className="hidden" 
+            accept="image/jpeg,image/png,application/pdf"
+          />
+          <button 
+            type="button" 
+            onClick={() => fileInputRef.current?.click()} 
+            disabled={isUploadingDoc}
+            className="w-full py-3.5 border border-[#eff0fe] border-dashed rounded-2xl text-[13px] font-bold text-indigo-600 bg-[#fbfbfe] hover:bg-[#eff0fe] transition-colors flex items-center justify-center gap-2 mt-4"
+          >
+            <span className="text-lg leading-none -mt-1">{isUploadingDoc ? '...' : '+'}</span> 
+            {isUploadingDoc ? 'Uploading...' : 'Add Certificate'}
           </button>
         </div>
 
@@ -235,6 +357,48 @@ export default function ProviderProfile() {
           Save Changes
         </button>
       </div>
+
+      {showAddServiceModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 animate-in fade-in zoom-in-95">
+             <h3 className="text-[16px] font-extrabold text-slate-900 mb-4 tracking-tight">Add Verified Service</h3>
+             <div className="space-y-4">
+               <div>
+                 <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">Select Service</label>
+                 <select 
+                   value={newServiceCategoryId}
+                   onChange={(e) => setNewServiceCategoryId(e.target.value)}
+                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-[14px] font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer appearance-none"
+                 >
+                   <option value="" disabled>Select a category...</option>
+                   {categories.map((c: any) => (
+                     <option key={c.id} value={c.id}>{c.name}</option>
+                   ))}
+                 </select>
+               </div>
+               <div>
+                 <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">Service Rate (Rs)</label>
+                 <div className="relative">
+                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[13px]">Rs</span>
+                   <input 
+                     type="number" 
+                     value={newServiceRate}
+                     onChange={(e) => setNewServiceRate(e.target.value)}
+                     placeholder="e.g. 500"
+                     className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-[14px] font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                   />
+                 </div>
+               </div>
+               <div className="flex gap-2.5 pt-2">
+                 <button onClick={() => setShowAddServiceModal(false)} className="flex-1 py-3 bg-gray-100 text-slate-600 font-bold rounded-xl text-[13px] transition-colors hover:bg-gray-200">Cancel</button>
+                 <button onClick={handleAddService} disabled={isAddingService} className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl text-[13px] transition-colors hover:bg-indigo-700 shadow-md shadow-indigo-100">
+                   {isAddingService ? 'Saving...' : 'Add Service'}
+                 </button>
+               </div>
+             </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -70,6 +70,8 @@ export const adminApi = {
   verifyProvider: (userId: string) => api.put(`/admin/users/${userId}/verify`),
   rejectProvider: (userId: string, reason?: string) => api.put(`/admin/users/${userId}/reject`, { reason }),
   deleteUser: (userId: string) => api.delete(`/admin/users/${userId}`),
+  blockUser: (userId: string) => api.post(`/admin/users/${userId}/block`),
+  unblockUser: (userId: string) => api.post(`/admin/users/${userId}/unblock`),
   updateUserRole: (userId: string, role: string) => api.put(`/admin/users/${userId}/role`, { role }),
   // Bookings
   listBookings: (params?: { page?: number; limit?: number; status?: string; from_date?: string; to_date?: string }) =>
@@ -96,7 +98,7 @@ export const adminApi = {
 // Users
 export const usersApi = {
   getProfile: () => api.get('/users/profile'),
-  updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string }) => api.put('/users/profile', data),
+  updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string; documents?: any }) => api.put('/users/profile', data),
   changePassword: (data: any) => api.put('/users/change-password', data),
   uploadAvatar: async (formData: FormData) => {
     const token = new Cookies().get('accessToken') || localStorage.getItem('accessToken');

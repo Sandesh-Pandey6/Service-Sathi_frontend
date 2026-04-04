@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { SimpleStatCard } from '@/components/admin/SimpleStatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { MapPin, Filter, Download, Users } from 'lucide-react';
+import { Filter, Download, Users } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -49,11 +49,33 @@ export default function AdminUsers() {
     }
   };
 
+  const handleBlockUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to block this user from logging in?')) return;
+    try {
+      await adminApi.blockUser(userId);
+      toast.success('User blocked');
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to block user');
+    }
+  };
+
+  const handleUnblockUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to unblock this user?')) return;
+    try {
+      await adminApi.unblockUser(userId);
+      toast.success('User unblocked');
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to unblock user');
+    }
+  };
+
   const filteredUsers = users.filter(u => {
     if (activeTab === 'All Users') return true;
     if (activeTab === 'Active') return u.is_verified && u.email_verified;
     if (activeTab === 'Inactive') return !u.email_verified;
-    if (activeTab === 'Banned') return false; // No ban status in current schema
+    if (activeTab === 'Banned') return u.is_blocked;
     return true;
   });
 
@@ -92,7 +114,7 @@ export default function AdminUsers() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
         <SimpleStatCard title="Total Users" value={stats?.users?.total?.toLocaleString() || '0'} color="blue" />
         <SimpleStatCard title="Customers" value={stats?.users?.customers?.toLocaleString() || '0'} color="emerald" />
-        <SimpleStatCard title="Providers" value={stats?.users?.providers?.toLocaleString() || '0'} color="violet" />
+        <SimpleStatCard title="Providers" value={stats?.users?.providers?.toLocaleString() || '0'} color="slate" />
         <SimpleStatCard title="Total Services" value={stats?.services?.total?.toLocaleString() || '0'} color="rose" />
       </div>
 
@@ -138,7 +160,7 @@ export default function AdminUsers() {
                     <span className="text-sm font-medium text-slate-500">{u.email}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={u.role?.toLowerCase() === 'admin' ? 'confirmed' : u.role?.toLowerCase() === 'provider' ? 'pending' : 'completed'} />
+                    <StatusBadge status={u.is_blocked ? 'cancelled' : u.role?.toUpperCase() === 'ADMIN' ? 'confirmed' : u.role?.toUpperCase() === 'PROVIDER' ? (u.provider_profile?.is_verified ? 'verified' : 'pending') : 'completed'} />
                     <span className="text-xs font-medium text-slate-500 ml-1">{u.role}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -148,12 +170,29 @@ export default function AdminUsers() {
                     <StatusBadge status={u.email_verified ? 'completed' : 'pending'} />
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => handleDeleteUser(u.id)}
-                      className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {u.is_blocked ? (
+                        <button
+                          onClick={() => handleUnblockUser(u.id)}
+                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                        >
+                          Unblock
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleBlockUser(u.id)}
+                          className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                        >
+                          Block
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteUser(u.id)}
+                        className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

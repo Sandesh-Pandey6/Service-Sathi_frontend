@@ -38,7 +38,7 @@ export default function CategoryProviders() {
 
   // Map services to the shape ProviderCard expects
   const providers = services.map((s: any) => ({
-    id: s.id,
+    id: s.provider?.id || s.provider_id || s.id,
     initials: s.provider?.user?.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '??',
     name: s.provider?.user?.full_name || s.title,
     service: s.title,
