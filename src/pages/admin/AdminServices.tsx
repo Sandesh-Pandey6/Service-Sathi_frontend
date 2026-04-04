@@ -42,7 +42,7 @@ export default function AdminServices() {
       await adminApi.createCategory({
         name: newCatName,
         description: newCatDesc,
-        icon: newCatIcon || '📦'
+        icon: newCatIcon || undefined
       });
       toast.success('Category created');
       setShowAddModal(false);
@@ -165,7 +165,7 @@ export default function AdminServices() {
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl">
-                  {selectedCategory.icon || '📦'}
+                  {selectedCategory.icon || <Layers size={24} className="text-slate-400" />}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 leading-tight">{selectedCategory.name}</h3>

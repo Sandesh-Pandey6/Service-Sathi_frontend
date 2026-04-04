@@ -160,5 +160,6 @@ export const chatApi = {
   getMessages: (conversationId: string, params?: Record<string, unknown>) => api.get(`/chat/messages/${conversationId}`, { params }),
   sendMessage: (data: Record<string, unknown>) => api.post('/chat/send', data),
   markAsRead: (messageId: string) => api.put(`/chat/read/${messageId}`),
-  uploadAttachment: (formData: FormData) => api.post('/chat/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  uploadAttachment: (formData: FormData) => api.post('/chat/upload', formData, { headers: { 'Content-Type': undefined }, timeout: 30000 }),
+  startConversation: (providerId: string) => api.post('/chat/start', { provider_id: providerId }),
 };

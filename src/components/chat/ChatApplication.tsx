@@ -3,17 +3,36 @@ import { chatApi } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 import { useAuth } from '@/hooks/useAuth';
 import toast from 'react-hot-toast';
-import { Search, Send, Paperclip, FileText, Bot, Check, CheckCheck, Loader2 } from 'lucide-react';
+import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, Loader2 } from 'lucide-react';
 
-const formatTime = (dateStr: string) => {
-  return new Date(dateStr).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+/* ── Helpers ── */
+const formatTime = (d: string) =>
+  new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+const formatDateLabel = (d: string) => {
+  const date = new Date(d);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 };
 
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+const formatSidebarTime = (d: string) => {
+  const date = new Date(d);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays < 7) return `${diffDays}d`;
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 };
 
-
+/* ── Types ── */
 interface UserInfo {
   id: string;
   full_name: string;
@@ -25,7 +44,13 @@ interface Conversation {
   booking_number: string;
   service: { id: string; title: string };
   other_party: UserInfo;
-  last_message: { id: string; message_text: string; sender_name: string; created_at: string; is_read: boolean } | null;
+  last_message: {
+    id: string;
+    message_text: string;
+    sender_name: string;
+    created_at: string;
+    is_read: boolean;
+  } | null;
   unread_count: number;
   total_messages: number;
   updated_at: string;
@@ -48,6 +73,27 @@ interface ChatApplicationProps {
   queryBookingId?: string | null;
 }
 
+/* ── Color Palette ── */
+const AVATAR_COLORS = [
+  { bg: '#dc2626', text: '#fff' },
+  { bg: '#7c3aed', text: '#fff' },
+  { bg: '#2563eb', text: '#fff' },
+  { bg: '#059669', text: '#fff' },
+  { bg: '#d97706', text: '#fff' },
+  { bg: '#ec4899', text: '#fff' },
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+/* ── Main Component ── */
 export default function ChatApplication({ role, queryBookingId }: ChatApplicationProps) {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -57,51 +103,53 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
   const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const socket = getSocket();
 
-  // Initial load
-  useEffect(() => {
-    fetchConversations();
-  }, []);
+  useEffect(() => { fetchConversations(); }, []);
 
-  // Fetch messages when active conversation changes
   useEffect(() => {
     if (activeConvId) {
       fetchMessages(activeConvId);
       socket.emit('join_conversation', { booking_id: activeConvId });
-      
-      // Clear unread count locally
-      setConversations(prev => prev.map(c => 
+      setConversations(prev => prev.map(c =>
         c.id === activeConvId ? { ...c, unread_count: 0 } : c
       ));
     }
   }, [activeConvId]);
 
-  // Handle Socket Events
   useEffect(() => {
-    const handleNewMessage = (msg: Message) => {
-      if (msg.id === activeConvId || (msg as any).booking_id === activeConvId) {
-        setMessages(prev => [...prev, msg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
-        
+    const handleNewMessage = (msg: Message & { booking_id?: string }) => {
+      const bookingId = msg.booking_id;
+      if (bookingId === activeConvId) {
+        setMessages(prev => {
+          // Deduplicate — avoid adding if already present (from REST refetch)
+          if (prev.some(m => m.id === msg.id)) return prev;
+          // Also remove any optimistic temp messages for this text
+          const filtered = prev.filter(m => !m.id.startsWith('temp-'));
+          return [...filtered, msg].sort((a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+        });
         if (msg.sender_id !== user?.id) {
           socket.emit('message_read', { message_id: msg.id });
         }
       }
-      // Regardless, update conversations list
       fetchConversations();
     };
 
-    const handleMessageRead = (data: { message_id: string; read_by: string; read_at: string }) => {
-      setMessages(prev => prev.map(m => m.id === data.message_id ? { ...m, is_read: true } : m));
+    const handleMessageRead = (data: { message_id: string }) => {
+      setMessages(prev => prev.map(m =>
+        m.id === data.message_id ? { ...m, is_read: true } : m
+      ));
     };
 
     socket.on('new_message', handleNewMessage);
     socket.on('message_read', handleMessageRead);
-
     return () => {
       socket.off('new_message', handleNewMessage);
       socket.off('message_read', handleMessageRead);
@@ -116,8 +164,6 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
     try {
       const res = await chatApi.getConversations();
       setConversations(res.data.conversations || []);
-      
-      // Auto-select first if none selected
       if (!activeConvId && res.data.conversations?.length > 0 && !queryBookingId) {
         setActiveConvId(res.data.conversations[0].id);
       }
@@ -132,267 +178,441 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
     try {
       const res = await chatApi.getMessages(bookingId, { page: 1, limit: 100 });
       setMessages(res.data.messages);
-      
-      // Mark unread as read immediately
       const unread = res.data.messages.filter((m: Message) => !m.is_read && m.sender_id !== user?.id);
-      unread.forEach((m: Message) => {
-        socket.emit('message_read', { message_id: m.id });
-      });
-    } catch (err) {
+      unread.forEach((m: Message) => socket.emit('message_read', { message_id: m.id }));
+    } catch {
       toast.error('Failed to load messages');
     }
   };
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || !activeConvId) return;
-    
     const activeConv = conversations.find(c => c.id === activeConvId);
     if (!activeConv) return;
-    
-    const payload = {
-      booking_id: activeConv.id,
-      receiver_id: activeConv.other_party.id,
-      message_text: inputText.trim(),
-      sender_role: role,
-      attachments: []
-    };
 
+    const messageText = inputText.trim();
     setInputText('');
-    socket.emit('send_message', payload);
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+
+    // Optimistic UI — show instantly
+    const tempMsg: Message = {
+      id: `temp-${Date.now()}`,
+      message_text: messageText,
+      attachments: [],
+      sender_id: user?.id || '',
+      sender_role: role,
+      receiver_id: activeConv.other_party.id,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      sender: { id: user?.id || '', full_name: user?.full_name || '', profile_image: null },
+    };
+    setMessages(prev => [...prev, tempMsg]);
+
+    try {
+      // Send via REST API (reliable)
+      await chatApi.sendMessage({
+        booking_id: activeConv.id,
+        receiver_id: activeConv.other_party.id,
+        message_text: messageText,
+        sender_role: role,
+        attachments: [],
+      });
+      // Refetch to get the real DB record
+      await fetchMessages(activeConvId);
+      fetchConversations();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to send message');
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeConvId) return;
-    
-    // Prevent giant files
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be under 10MB');
-      return;
-    }
+    if (file.size > 10 * 1024 * 1024) { toast.error('File must be under 10MB'); return; }
 
     const activeConv = conversations.find(c => c.id === activeConvId);
     if (!activeConv) return;
 
     try {
       setIsUploading(true);
+
+      // 1. Upload the file
       const fd = new FormData();
       fd.append('file', file);
       fd.append('booking_id', activeConvId);
+      const uploadRes = await chatApi.uploadAttachment(fd);
+      const url = uploadRes.data.url;
 
-      const res = await chatApi.uploadAttachment(fd);
-      const url = res.data.url;
-
-      socket.emit('send_message', {
+      // 2. Send the message with the attachment via REST
+      await chatApi.sendMessage({
         booking_id: activeConv.id,
         receiver_id: activeConv.other_party.id,
-        message_text: `Attached a file: ${file.name}`,
+        message_text: `Shared: ${file.name}`,
         sender_role: role,
-        attachments: [url]
+        attachments: [url],
       });
 
+      // 3. Refetch messages to show properly
+      await fetchMessages(activeConvId);
+      fetchConversations();
       toast.success('File sent');
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to upload file');
+      toast.error(err.response?.data?.error || 'Upload failed');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const filteredConversations = conversations.filter(c => 
+  const filteredConversations = conversations.filter(c =>
     c.other_party.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.booking_number.toLowerCase().includes(searchQuery.toLowerCase())
+    c.service.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const renderFilePreview = (url: string) => {
+  const renderAttachment = (url: string) => {
     const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i) || url.includes('/image/upload/');
     if (isImage) {
       return (
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          <img src={url} alt="Attachment" className="max-w-[200px] max-h-[200px] rounded-lg mt-2 object-cover border border-white/20 hover:opacity-90" />
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-2">
+          <img src={url} alt="Attachment" style={{
+            maxWidth: '220px', maxHeight: '180px', borderRadius: '12px',
+            objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)',
+          }} />
         </a>
       );
     }
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 px-3 py-2 bg-black/10 rounded-lg hover:bg-black/20 transition-colors shrink-0">
+      <a href={url} target="_blank" rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px',
+          marginTop: '8px', padding: '8px 14px', borderRadius: '10px',
+          background: 'rgba(0,0,0,0.08)', fontSize: '13px', fontWeight: 600,
+          color: 'inherit', textDecoration: 'none',
+        }}>
         <FileText size={16} />
-        <span className="text-sm font-medium underline underline-offset-2">View Attachment</span>
+        View File
       </a>
     );
   };
 
-  if (loading) {
-    return <div className="flex h-[calc(100vh-100px)] w-full items-center justify-center"><Loader2 className="animate-spin text-slate-400" size={32} /></div>;
-  }
-
   const activeConversation = conversations.find(c => c.id === activeConvId);
 
+  /* ── Loading ── */
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', height: 'calc(100vh - 120px)', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={32} className="animate-spin" style={{ color: '#dc2626' }} />
+      </div>
+    );
+  }
+
+  /* ── Render ── */
   return (
-    <div className="flex h-[calc(100vh-120px)] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      {/* Sidebar - Conversations List */}
-      <div className="w-[320px] shrink-0 border-r border-slate-200 flex flex-col bg-slate-50/50">
-        <div className="p-4 border-b border-slate-200 bg-white">
-          <h2 className="text-xl font-bold text-slate-800 tracking-tight">Messages</h2>
-          <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search chats..." 
+    <div style={{
+      display: 'flex', height: 'calc(100vh - 140px)', background: '#fff',
+      borderRadius: '20px', overflow: 'hidden',
+      border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      fontFamily: "'Inter', system-ui, sans-serif",
+    }}>
+
+      {/* ════════ SIDEBAR ════════ */}
+      <div style={{
+        width: '300px', flexShrink: 0, borderRight: '1px solid #f1f5f9',
+        display: 'flex', flexDirection: 'column', background: '#fafbfc',
+      }}>
+        {/* Sidebar Header */}
+        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #f1f5f9', background: '#fff' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0' }}>Messages</h2>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: '#f8fafc', borderRadius: '10px', padding: '8px 12px',
+          }}>
+            <Search size={15} style={{ color: '#94a3b8', flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-[#00d4d4] outline-none" 
+              style={{
+                flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                fontSize: '13px', color: '#334155', fontWeight: 500, fontFamily: 'inherit',
+              }}
             />
           </div>
         </div>
-        
-        <div className="flex-1 overflow-y-auto w-full">
+
+        {/* Conversation List */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {filteredConversations.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 text-sm">No conversations found.</div>
+            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px', fontWeight: 500 }}>
+              No conversations yet
+            </div>
           ) : (
-            filteredConversations.map(conv => (
-              <button
-                key={conv.id}
-                onClick={() => setActiveConvId(conv.id)}
-                className={`w-full text-left p-4 border-b border-slate-100 flex gap-3 transition-colors ${activeConvId === conv.id ? 'bg-[#00d4d4]/10 border-l-4 border-l-[#00d4d4]' : 'hover:bg-slate-50 border-l-4 border-l-transparent'}`}
-              >
-                <div className="w-12 h-12 shrink-0 rounded-full bg-slate-200 overflow-hidden border border-slate-200 flex items-center justify-center text-slate-400 font-bold">
-                  {conv.other_party.profile_image ? (
-                    <img src={conv.other_party.profile_image} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                     conv.other_party.full_name.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-slate-800 truncate pr-2 text-sm">{conv.other_party.full_name}</h3>
-                    {conv.last_message && (
-                      <span className="text-[11px] text-slate-400 whitespace-nowrap mt-0.5">
-                        {formatDate(conv.last_message.created_at)}
-                      </span>
-                    )}
+            filteredConversations.map(conv => {
+              const isActive = activeConvId === conv.id;
+              const color = getAvatarColor(conv.other_party.full_name);
+              const initials = getInitials(conv.other_party.full_name);
+              return (
+                <button
+                  key={conv.id}
+                  onClick={() => setActiveConvId(conv.id)}
+                  style={{
+                    width: '100%', textAlign: 'left', padding: '14px 20px',
+                    display: 'flex', gap: '12px', alignItems: 'center',
+                    borderBottom: '1px solid #f8fafc', cursor: 'pointer',
+                    background: isActive ? '#fef2f2' : 'transparent',
+                    borderLeft: isActive ? '3px solid #dc2626' : '3px solid transparent',
+                    transition: 'all 0.15s ease', border: 'none',
+                    borderRight: 'none', borderTop: 'none',
+                    fontFamily: 'inherit',
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = '#f8fafc'; }}
+                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {/* Avatar */}
+                  <div style={{
+                    width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
+                    background: color.bg, color: color.text,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 700, fontSize: '14px', letterSpacing: '0.5px',
+                  }}>
+                    {conv.other_party.profile_image ? (
+                      <img src={conv.other_party.profile_image} alt="" style={{
+                        width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
+                      }} />
+                    ) : initials}
                   </div>
-                  <p className="text-xs font-semibold text-[#00d4d4] mb-1 truncate">{conv.service.title}</p>
-                  
-                  <div className="flex items-center justify-between">
-                    <p className={`text-xs truncate max-w-[180px] ${conv.unread_count > 0 ? 'font-bold text-slate-800' : 'text-slate-500'}`}>
-                      {conv.last_message ? (
-                        <>
-                          {conv.last_message.sender_name === user?.full_name ? 'You: ' : ''}
-                          {conv.last_message.message_text}
-                        </>
-                      ) : (
-                        'Started a conversation'
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                      <span style={{
+                        fontSize: '13px', fontWeight: conv.unread_count > 0 ? 800 : 700,
+                        color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        maxWidth: '130px',
+                      }}>
+                        {conv.other_party.full_name}
+                      </span>
+                      {conv.last_message && (
+                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#94a3b8', flexShrink: 0 }}>
+                          {formatSidebarTime(conv.last_message.created_at)}
+                        </span>
                       )}
-                    </p>
-                    {conv.unread_count > 0 && (
-                      <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
-                        {conv.unread_count}
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#dc2626', marginBottom: '3px' }}>
+                      {conv.service.title}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{
+                        fontSize: '12px', fontWeight: conv.unread_count > 0 ? 600 : 500,
+                        color: conv.unread_count > 0 ? '#334155' : '#94a3b8',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        maxWidth: '160px',
+                      }}>
+                        {conv.last_message ? (
+                          <>
+                            {conv.last_message.sender_name === user?.full_name ? 'You: ' : ''}
+                            {conv.last_message.message_text}
+                          </>
+                        ) : 'Start a conversation'}
                       </span>
-                    )}
+                      {conv.unread_count > 0 && (
+                        <span style={{
+                          background: '#dc2626', color: '#fff', fontSize: '10px', fontWeight: 700,
+                          padding: '2px 7px', borderRadius: '10px', flexShrink: 0,
+                        }}>
+                          {conv.unread_count}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))
+                </button>
+              );
+            })
           )}
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-slate-50 relative">
+      {/* ════════ CHAT AREA ════════ */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fafbfc' }}>
         {activeConversation ? (
           <>
-            {/* Chat Area Header */}
-            <div className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
-              <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 shrink-0 rounded-full bg-slate-200 overflow-hidden border border-slate-200 flex items-center justify-center text-slate-400 font-bold">
+            {/* Chat Header */}
+            <div style={{
+              height: '64px', borderBottom: '1px solid #f1f5f9', background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '0 24px', flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
+                  background: getAvatarColor(activeConversation.other_party.full_name).bg,
+                  color: getAvatarColor(activeConversation.other_party.full_name).text,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, fontSize: '14px',
+                }}>
                   {activeConversation.other_party.profile_image ? (
-                    <img src={activeConversation.other_party.profile_image} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                     activeConversation.other_party.full_name.charAt(0).toUpperCase()
-                  )}
+                    <img src={activeConversation.other_party.profile_image} alt="" style={{
+                      width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
+                    }} />
+                  ) : getInitials(activeConversation.other_party.full_name)}
                 </div>
                 <div>
-                  <h2 className="font-bold text-slate-800 leading-tight">{activeConversation.other_party.full_name}</h2>
-                  <p className="text-xs text-slate-500 font-medium">Booking: {activeConversation.booking_number}</p>
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.2 }}>
+                    {activeConversation.other_party.full_name}
+                  </h3>
+                  <p style={{ fontSize: '12px', fontWeight: 500, color: '#94a3b8', margin: 0 }}>
+                    {activeConversation.service.title} · {activeConversation.booking_number}
+                  </p>
                 </div>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                fontSize: '12px', fontWeight: 600, color: '#10b981',
+              }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }} />
+                Online
               </div>
             </div>
 
-            {/* Messages Flow */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
               {messages.length === 0 ? (
-                 <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3 opacity-50">
-                    <Bot size={48} strokeWidth={1} />
-                    <p>No messages yet. Say hello!</p>
-                 </div>
+                <div style={{
+                  height: '100%', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', opacity: 0.4,
+                }}>
+                  <MessageCircle size={48} strokeWidth={1} style={{ color: '#94a3b8', marginBottom: '12px' }} />
+                  <p style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>No messages yet. Say hello!</p>
+                </div>
               ) : (
-                messages.map((msg, index) => {
-                  const isMe = msg.sender_id === user?.id;
-                  
-                  // grouping logic
-                  const prevMsg = index > 0 ? messages[index - 1] : null;
-                  const isSameSenderAsPrev = prevMsg && prevMsg.sender_id === msg.sender_id;
-                  const showHeader = !isSameSenderAsPrev;
-                  
-                  return (
-                    <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${!showHeader ? '-mt-4' : ''}`}>
-                      {showHeader && (
-                        <div className="text-[11px] font-semibold text-slate-400 mb-1.5 mx-1 flex items-center gap-2">
-                          {!isMe && msg.sender?.full_name}
-                          <span className="font-normal opacity-70">{formatTime(msg.created_at)}</span>
+                (() => {
+                  let lastDateLabel = '';
+                  return messages.map((msg, index) => {
+                    const isMe = msg.sender_id === user?.id;
+                    const prevMsg = index > 0 ? messages[index - 1] : null;
+                    const isSameSender = prevMsg && prevMsg.sender_id === msg.sender_id;
+                    const showHeader = !isSameSender;
+
+                    // Date separator
+                    const dateLabel = formatDateLabel(msg.created_at);
+                    let showDateSep = false;
+                    if (dateLabel !== lastDateLabel) {
+                      showDateSep = true;
+                      lastDateLabel = dateLabel;
+                    }
+
+                    return (
+                      <React.Fragment key={msg.id}>
+                        {showDateSep && (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '20px 0', gap: '12px',
+                          }}>
+                            <div style={{ flex: 1, maxWidth: '100px', height: '1px', background: '#e2e8f0' }} />
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8' }}>{dateLabel}</span>
+                            <div style={{ flex: 1, maxWidth: '100px', height: '1px', background: '#e2e8f0' }} />
+                          </div>
+                        )}
+
+                        <div style={{
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: isMe ? 'flex-end' : 'flex-start',
+                          marginTop: showHeader ? '16px' : '4px',
+                        }}>
+                          {/* Bubble */}
+                          <div style={{
+                            maxWidth: '65%', padding: '12px 16px',
+                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            background: isMe ? '#dc2626' : '#ffffff',
+                            color: isMe ? '#fff' : '#1e293b',
+                            border: isMe ? 'none' : '1px solid #f1f5f9',
+                            boxShadow: isMe ? '0 2px 8px rgba(220,38,38,0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
+                          }}>
+                            <p style={{
+                              margin: 0, fontSize: '14px', lineHeight: 1.6,
+                              fontWeight: 500, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                            }}>
+                              {msg.message_text}
+                            </p>
+                            {msg.attachments && msg.attachments.length > 0 && (
+                              <div>{msg.attachments.map((url, i) => <React.Fragment key={i}>{renderAttachment(url)}</React.Fragment>)}</div>
+                            )}
+                          </div>
+
+                          {/* Timestamp + Read Receipt */}
+                          <div style={{
+                            display: 'flex', alignItems: 'center', gap: '4px',
+                            marginTop: '4px', padding: '0 4px',
+                          }}>
+                            <span style={{ fontSize: '11px', fontWeight: 500, color: '#94a3b8' }}>
+                              {formatDateLabel(msg.created_at) !== 'Today'
+                                ? `${formatDateLabel(msg.created_at)}, ${formatTime(msg.created_at)}`
+                                : formatTime(msg.created_at)
+                              }
+                            </span>
+                            {isMe && (
+                              msg.is_read
+                                ? <CheckCheck size={13} style={{ color: '#3b82f6' }} />
+                                : <Check size={13} style={{ color: '#94a3b8' }} />
+                            )}
+                          </div>
                         </div>
-                      )}
-                      
-                      <div className={`
-                        max-w-[70%] px-4 py-3 rounded-2xl shadow-sm text-[15px]
-                        ${isMe ? 'bg-[#00d4d4] text-white rounded-tr-sm' : 'bg-white text-slate-800 border border-slate-100 rounded-tl-sm'}
-                      `}>
-                        <p className="whitespace-pre-wrap leading-relaxed">{msg.message_text}</p>
-                        
-                        {msg.attachments && msg.attachments.length > 0 && (
-                          <div className="mt-1 flex flex-col gap-2">
-                            {msg.attachments.map((url, i) => <React.Fragment key={i}>{renderFilePreview(url)}</React.Fragment>)}
-                          </div>
-                        )}
-                        
-                        {isMe && (
-                          <div className={`flex justify-end mt-1 mb-[-4px] ${isMe ? 'text-white/70' : 'text-slate-400'}`}>
-                            {msg.is_read ? <CheckCheck size={14} /> : <Check size={14} />}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                      </React.Fragment>
+                    );
+                  });
+                })()
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
-            <div className="p-4 bg-white border-t border-slate-200 shrink-0">
-              <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 focus-within:ring-2 focus-within:ring-[#00d4d4]/50 focus-within:border-[#00d4d4] transition-all">
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx" 
+            {/* Input Area */}
+            <div style={{
+              padding: '16px 24px', background: '#fff',
+              borderTop: '1px solid #f1f5f9', flexShrink: 0,
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-end', gap: '8px',
+                background: '#fafbfc', border: '1.5px solid #e2e8f0',
+                borderRadius: '16px', padding: '6px 8px',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(220,38,38,0.08)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
                   onChange={handleFileUpload}
                 />
-                
-                <button 
+                <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="p-2 sm:p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors shrink-0 disabled:opacity-50"
+                  style={{
+                    padding: '8px', background: 'none', border: 'none', cursor: 'pointer',
+                    color: '#94a3b8', borderRadius: '8px', display: 'flex', alignItems: 'center',
+                    transition: 'color 0.15s', flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#dc2626'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; }}
                 >
                   {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Paperclip size={20} />}
                 </button>
-                
+
                 <textarea
+                  ref={textareaRef}
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
+                  onChange={(e) => {
+                    setInputText(e.target.value);
+                    // Auto-resize
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -400,30 +620,49 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
                     }
                   }}
                   placeholder="Type a message..."
-                  className="flex-1 max-h-32 min-h-[44px] bg-transparent resize-none outline-none py-2.5 px-2 text-sm text-slate-700 placeholder:text-slate-400"
                   rows={1}
+                  style={{
+                    flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                    resize: 'none', fontSize: '14px', color: '#334155', fontWeight: 500,
+                    fontFamily: 'inherit', padding: '8px 4px', minHeight: '36px', maxHeight: '120px',
+                    lineHeight: '1.4',
+                  }}
                 />
-                
-                <button 
+
+                <button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim()}
-                  className="p-3 bg-[#00d4d4] hover:bg-[#00baba] text-white rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-[#00d4d4] shrink-0 mb-0.5"
+                  style={{
+                    padding: '10px', background: inputText.trim() ? '#dc2626' : '#fca5a5',
+                    color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s', flexShrink: 0,
+                    boxShadow: inputText.trim() ? '0 2px 8px rgba(220,38,38,0.25)' : 'none',
+                  }}
+                  onMouseEnter={(e) => { if (inputText.trim()) e.currentTarget.style.background = '#b91c1c'; }}
+                  onMouseLeave={(e) => { if (inputText.trim()) e.currentTarget.style.background = '#dc2626'; }}
                 >
-                  <Send size={18} className="translate-x-[1px] translate-y-[-1px]" />
+                  <Send size={18} style={{ transform: 'translateX(1px) rotate(-5deg)' }} />
                 </button>
               </div>
-              <p className="text-[10px] text-center text-slate-400 mt-2 font-medium tracking-wide">
-                Press Enter to send, Shift + Enter for new line. You can attach PDFs or Images.
-              </p>
             </div>
           </>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
-            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center">
-               <Bot size={48} className="text-slate-300" strokeWidth={1.5} />
+          /* Empty State */
+          <div style={{
+            height: '100%', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: '16px',
+          }}>
+            <div style={{
+              width: '80px', height: '80px', borderRadius: '50%',
+              background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <MessageCircle size={36} style={{ color: '#fca5a5' }} strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-bold text-slate-700 tracking-tight">Your Inbox</h3>
-            <p className="max-w-xs text-center leading-relaxed">Select a conversation from the sidebar to view your messages or share files.</p>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#334155', margin: 0 }}>Your Messages</h3>
+            <p style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500, maxWidth: '260px', textAlign: 'center', lineHeight: 1.6 }}>
+              Select a conversation from the sidebar to view messages and share files.
+            </p>
           </div>
         )}
       </div>

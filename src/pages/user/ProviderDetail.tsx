@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Star, MapPin, ChevronLeft, CalendarDays, Loader2 } from 'lucide-react';
-import { usersApi, servicesApi } from '@/lib/api';
+import { Star, MapPin, ChevronLeft, CalendarDays, Loader2, MessageSquare } from 'lucide-react';
+import { usersApi, servicesApi, chatApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 import BookingCalendar from '@/components/user/BookingCalendar';
 import TimeSlots from '@/components/user/TimeSlots';
 
@@ -81,6 +82,18 @@ export default function ProviderDetailPage() {
     navigate(`/user/booking/payment?provider=${providerId}&date=${selectedDate.toISOString()}&slot=${encodeURIComponent(selectedSlot)}&category=${categoryId}`);
   };
 
+  const handleMessage = async () => {
+    try {
+      // Find or create a conversation with this provider (no booking needed)
+      const res = await chatApi.startConversation(providerId!);
+      const conversationId = res.data.conversation_id;
+      navigate(`/user/messages?booking=${conversationId}`);
+    } catch (err: any) {
+      console.error('Failed to start conversation:', err);
+      toast.error(err.response?.data?.error || 'Could not start conversation');
+    }
+  };
+
   return (
     <div className="p-8 w-full max-w-3xl mx-auto" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       <Link to={`/user/services/${categoryId}`} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 hover:text-red-600 transition-colors mb-6">
@@ -118,6 +131,12 @@ export default function ProviderDetailPage() {
               )}
             </div>
           </div>
+          <button
+            onClick={handleMessage}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[13px] rounded-xl transition-colors self-start mt-1"
+          >
+            <MessageSquare size={16} /> Message
+          </button>
         </div>
 
         <div className="grid grid-cols-3 gap-4 pt-5 border-t border-slate-100">

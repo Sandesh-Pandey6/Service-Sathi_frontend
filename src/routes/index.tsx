@@ -40,7 +40,7 @@ import ProviderReviews from '@/pages/provider/ProviderReviews';
 import ProviderProfile from '@/pages/provider/ProviderProfile';
 import ProviderAvailability from '@/pages/provider/ProviderAvailability';
 
-import ProviderMessages from '@/pages/provider/ProviderMessages';
+import ProviderMessages from '@/pages/provider/Messages';
 import ProviderSettings from '@/pages/provider/ProviderSettings';
 
 const ServicesPage = () => (
