@@ -92,7 +92,7 @@ export const adminApi = {
     api.get('/admin/reports', { params }),
   // Settings — categories
   createCategory: (data: { name: string; description?: string; icon?: string }) =>
-    api.post('/admin/categories', data),
+    api.post('/services/categories', data),
 };
 
 // Users
@@ -129,6 +129,7 @@ export const servicesApi = {
   create: (data: Record<string, unknown>) => api.post('/services', data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/services/${id}`, data),
   delete: (id: string) => api.delete(`/services/${id}`),
+  deleteCategory: (id: string) => api.delete(`/services/categories/${id}`),
 };
 
 // Bookings
