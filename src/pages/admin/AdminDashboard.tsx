@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
@@ -6,27 +6,46 @@ import { QuickActions } from '@/components/admin/QuickActions';
 import { PlatformHealth } from '@/components/admin/PlatformHealth';
 import { RevenueChartPlaceholder } from '@/components/admin/RevenueChartPlaceholder';
 import { Users, Wrench, Calendar, Banknote, Star, HelpCircle, ArrowUpRight } from 'lucide-react';
-import { mockBookings, mockPayments, mockProviders } from '@/data/adminMockData';
+import { adminApi } from '@/lib/api';
 
 export default function AdminDashboard() {
-  // Using static visual data mapped directly to request image
-  const stats = [
-    { title: 'Total Users', value: '8,541', icon: <Users size={20} strokeWidth={2.5}/>, color: 'blue', change: '+12%', changeType: 'up' as const },
-    { title: 'Active Providers', value: '1,284', icon: <Wrench size={20} strokeWidth={2.5}/>, color: 'violet', change: '+8%', changeType: 'up' as const },
-    { title: 'Bookings Today', value: '347', icon: <Calendar size={20} strokeWidth={2.5}/>, color: 'emerald', change: '+23%', changeType: 'up' as const },
-    { title: 'Revenue (NPR)', value: 'Rs4.2L', icon: <Banknote size={20} strokeWidth={2.5}/>, color: 'orange', change: '+15%', changeType: 'up' as const },
-    { title: 'Pending Reviews', value: '93', icon: <Star size={20} strokeWidth={2.5}/>, color: 'yellow', change: '-5%', changeType: 'down' as const },
-    { title: 'Open Tickets', value: '21', icon: <HelpCircle size={20} strokeWidth={2.5}/>, color: 'red', change: '+3', changeType: 'down' as const },
-  ];
+  const [dashStats, setDashStats] = useState<any>(null);
+  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Specific 5 bookings matching the UI (slightly adjusted based on our mock data format)
-  const recentBookings = mockBookings.slice(0, 5);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [statsRes, bookingsRes] = await Promise.all([
+          adminApi.getDashboardStats(),
+          adminApi.listBookings({ page: 1, limit: 5 }),
+        ]);
+        setDashStats(statsRes.data);
+        setRecentBookings(bookingsRes.data.bookings || []);
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const stats = [
+    { title: 'Total Users', value: dashStats?.users?.total?.toLocaleString() || '0', icon: <Users size={20} strokeWidth={2.5}/>, color: 'blue', change: '+12%', changeType: 'up' as const },
+    { title: 'Active Providers', value: dashStats?.users?.providers?.toLocaleString() || '0', icon: <Wrench size={20} strokeWidth={2.5}/>, color: 'violet', change: '+8%', changeType: 'up' as const },
+    { title: 'Total Bookings', value: dashStats?.bookings?.total?.toLocaleString() || '0', icon: <Calendar size={20} strokeWidth={2.5}/>, color: 'emerald', change: '+23%', changeType: 'up' as const },
+    { title: 'Revenue (NPR)', value: `Rs${((dashStats?.revenue?.total || 0) / 1000).toFixed(1)}K`, icon: <Banknote size={20} strokeWidth={2.5}/>, color: 'orange', change: '+15%', changeType: 'up' as const },
+    { title: 'Pending Bookings', value: dashStats?.bookings?.pending?.toString() || '0', icon: <Star size={20} strokeWidth={2.5}/>, color: 'yellow', change: '', changeType: 'up' as const },
+    { title: 'Completed', value: dashStats?.bookings?.completed?.toString() || '0', icon: <HelpCircle size={20} strokeWidth={2.5}/>, color: 'red', change: '', changeType: 'up' as const },
+  ];
 
   return (
     <AdminLayout title="Overview" breadcrumbs={['Admin', 'Overview']}>
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 mt-2 gap-3">
-        <p className="text-[13px] text-slate-500 font-medium">Sunday, 29 March 2026 · Last updated just now</p>
+        <p className="text-[13px] text-slate-500 font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Last updated just now</p>
         <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
           <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white text-slate-600 font-bold text-[13px] border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
             <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -43,7 +62,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Stats Grid — 2 cols on mobile, 3 on md, 6 on xl */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
         {stats.map((s, i) => (
           <StatCard key={i} {...s} />
@@ -52,19 +71,16 @@ export default function AdminDashboard() {
 
       {/* Charts & Actions Section */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-        {/* Main Chart area (takes 3 cols on extra-large screens) */}
         <div className="xl:col-span-3">
           <RevenueChartPlaceholder />
         </div>
-
-        {/* Right side widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 lg:gap-6">
           <QuickActions />
           <PlatformHealth />
         </div>
       </div>
 
-      {/* Recent Bookings Full Width Table */}
+      {/* Recent Bookings Table */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-100">
           <h3 className="font-bold text-slate-800 text-[15px]">Recent Bookings</h3>
@@ -73,6 +89,16 @@ export default function AdminDashboard() {
           </button>
         </div>
         <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+            </div>
+          ) : recentBookings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <Calendar size={32} className="mb-2" />
+              <p className="text-sm font-medium">No bookings yet</p>
+            </div>
+          ) : (
           <table className="w-full text-left min-w-[700px]">
             <thead>
               <tr className="border-b border-slate-50">
@@ -86,33 +112,34 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {recentBookings.map((b, i) => (
+              {recentBookings.map((b: any) => (
                 <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-slate-500">#{b.id.replace('b100', 'B592')}</span>
+                    <span className="text-sm font-medium text-slate-500">#{b.booking_number || b.id.slice(-6)}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4">
-                    <span className="text-sm font-bold text-slate-800">{b.customer}</span>
+                    <span className="text-sm font-bold text-slate-800">{b.customer?.user?.full_name || 'N/A'}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4">
-                    <span className="text-sm font-medium text-slate-500">{b.provider}</span>
+                    <span className="text-sm font-medium text-slate-500">{b.provider?.user?.full_name || 'N/A'}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4">
-                    <span className="text-sm font-medium text-slate-500">{b.service.split(' ')[0]} {b.service.split(' ')[1]}</span>
+                    <span className="text-sm font-medium text-slate-500">{b.service?.title || 'N/A'}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-slate-500">Today 10:00</span>
+                    <span className="text-sm font-medium text-slate-500">{new Date(b.scheduled_date).toLocaleDateString()}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-bold text-slate-800">Rs{b.amount.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-slate-800">Rs{b.total_amount?.toLocaleString()}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={b.status} />
+                    <StatusBadge status={b.status?.toLowerCase()} />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          )}
         </div>
       </div>
 

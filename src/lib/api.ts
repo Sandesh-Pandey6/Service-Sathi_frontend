@@ -52,7 +52,7 @@ api.interceptors.response.use(
 
 // Auth
 export const authApi = {
-  register: (data: { email: string; password: string; full_name: string; role?: string; phone?: string }) =>
+  register: (data: { email: string; password: string; full_name: string; role?: string; phone?: string; documents?: any; categories?: string[]; experience?: string; city?: string; bio?: string }) =>
     api.post('/auth/register', data),
   verifyOtp: (data: { email: string; otp: string }) => api.post('/auth/verify-otp', data),
   resendOtp: (data: { email: string }) => api.post('/auth/resend-otp', data),
@@ -68,11 +68,18 @@ export const adminApi = {
   listUsers: (params?: { page?: number; limit?: number; role?: string; search?: string }) =>
     api.get('/admin/users', { params }),
   verifyProvider: (userId: string) => api.put(`/admin/users/${userId}/verify`),
+  rejectProvider: (userId: string, reason?: string) => api.put(`/admin/users/${userId}/reject`, { reason }),
   deleteUser: (userId: string) => api.delete(`/admin/users/${userId}`),
   updateUserRole: (userId: string, role: string) => api.put(`/admin/users/${userId}/role`, { role }),
   // Bookings
   listBookings: (params?: { page?: number; limit?: number; status?: string; from_date?: string; to_date?: string }) =>
     api.get('/admin/bookings', { params }),
+  // Reviews
+  listReviews: (params?: { page?: number; limit?: number; status?: string }) =>
+    api.get('/admin/reviews', { params }),
+  // Payments
+  listPayments: (params?: { page?: number; limit?: number; status?: string }) =>
+    api.get('/admin/payments', { params }),
   // Analytics
   getRevenueAnalytics: (params?: { from_date?: string; to_date?: string }) =>
     api.get('/admin/analytics/revenue', { params }),
@@ -115,7 +122,11 @@ export const servicesApi = {
   getById: (id: string) => api.get(`/services/${id}`),
   search: (params?: Record<string, unknown>) => api.get('/services/search', { params }),
   listCategories: () => api.get('/services/categories'),
+  listCategoriesAdmin: () => api.get('/services/categories/admin'),
   getProviderServices: (providerId: string) => api.get(`/services/provider/${providerId}`),
+  create: (data: Record<string, unknown>) => api.post('/services', data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/services/${id}`, data),
+  delete: (id: string) => api.delete(`/services/${id}`),
 };
 
 // Bookings

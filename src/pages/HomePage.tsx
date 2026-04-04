@@ -56,7 +56,7 @@ export default function HomePage() {
       <a href="#how-it-works" className="hover:text-red-600 transition-colors">How it Works</a>
       <a href="#become-pro" className="hover:text-red-600 transition-colors">Become a Pro</a>
       <Link
-        to="/register"
+        to="/login-role"
         className="border border-red-500 text-red-600 font-semibold px-5 py-1.5 rounded-full hover:bg-red-50 transition-colors"
       >
         Log In

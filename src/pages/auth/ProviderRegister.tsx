@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   User, Mail, Lock, Eye, EyeOff, ShieldCheck, Loader2, MapPin, 
-  Check, Briefcase, Camera, UploadCloud, Hexagon 
+  Check, Briefcase, Camera, UploadCloud, Hexagon, X, FileText, CheckCircle2
 } from 'lucide-react';
 import { authApi } from '@/lib/api';
 
-type Step = 1 | 2 | 3;
+
+type Step = 1 | 2 | 3 | 4;
 
 /* ── Form Input Wrapper ── */
 function Field({ label, required = true, icon, error, children, rightContext }: { label: string, required?: boolean, icon?: React.ReactNode, error?: string, children: React.ReactNode, rightContext?: React.ReactNode }) {
@@ -35,10 +36,143 @@ function Field({ label, required = true, icon, error, children, rightContext }: 
   );
 }
 
+/* ── File Upload Zone ── */
+interface UploadZoneProps {
+  label: string;
+  required?: boolean;
+  file: File | null;
+  uploadedUrl: string | null;
+  isUploading: boolean;
+  onSelect: (file: File) => void;
+  onRemove: () => void;
+  accept?: string;
+  maxMB?: number;
+  icon?: React.ReactNode;
+  hints?: string[];
+  compact?: boolean;
+}
+
+function UploadZone({ label, required, file, uploadedUrl, isUploading, onSelect, onRemove, accept = 'image/jpeg,image/png,application/pdf', maxMB = 5, icon, hints, compact }: UploadZoneProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    if (!file && !uploadedUrl) inputRef.current?.click();
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > maxMB * 1024 * 1024) {
+      toast.error(`File must be under ${maxMB}MB`);
+      return;
+    }
+    onSelect(f);
+    e.target.value = '';
+  };
+
+  const isImage = file?.type?.startsWith('image/');
+  const isPdf = file?.type === 'application/pdf';
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-[13px] font-bold text-slate-700">
+        {label} {required && <span className="text-[#4338ca]">*</span>}
+        {!required && <span className="text-gray-400 font-normal ml-1">(Optional but recommended)</span>}
+      </label>
+      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleChange} />
+
+      {/* No file selected */}
+      {!file && !uploadedUrl && (
+        <div
+          onClick={handleClick}
+          className={`border-2 border-dashed border-gray-200 rounded-2xl hover:border-[#5b21b6] hover:bg-[#5b21b6]/5 transition-all cursor-pointer bg-white group ${compact ? 'p-6 flex flex-col items-center justify-center text-center py-6' : 'p-6 flex gap-6 items-center'}`}
+        >
+          {compact ? (
+            <>
+              <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-[#5b21b6] mb-3">
+                <UploadCloud size={20} />
+              </div>
+              <h4 className="text-[14px] font-bold text-slate-800 mb-1">Click to upload</h4>
+              <p className="text-[12px] text-slate-500">JPG, PNG or PDF • Max {maxMB}MB</p>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-20 bg-blue-50 border border-blue-100 rounded-lg flex flex-col items-center justify-center text-blue-400 group-hover:bg-white transition-colors shrink-0">
+                {icon || <UploadCloud size={24} className="mb-1 text-blue-500" />}
+                <span className="text-[10px] font-bold">Upload</span>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-[14px] font-bold text-slate-800 mb-1">Click to upload</h4>
+                {hints ? (
+                  <ul className="text-[12px] text-slate-500 space-y-0.5 list-disc list-inside marker:text-slate-300">
+                    {hints.map((h, i) => <li key={i}>{h}</li>)}
+                  </ul>
+                ) : (
+                  <p className="text-[12px] text-slate-500">JPG, PNG or PDF • Max {maxMB}MB</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* File selected / uploaded — preview */}
+      {(file || uploadedUrl) && (
+        <div className="border-2 border-emerald-200 bg-emerald-50/40 rounded-2xl p-4 flex items-center gap-4 relative">
+          {/* Thumbnail */}
+          {isImage && file ? (
+            <img src={URL.createObjectURL(file)} alt="preview" className="w-14 h-14 rounded-lg object-cover border border-gray-200 shrink-0" />
+          ) : uploadedUrl && !isPdf ? (
+            <img src={uploadedUrl} alt="uploaded" className="w-14 h-14 rounded-lg object-cover border border-gray-200 shrink-0" />
+          ) : (
+            <div className="w-14 h-14 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-400 shrink-0">
+              <FileText size={24} />
+            </div>
+          )}
+
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-slate-800 truncate">{file?.name || 'Uploaded'}</p>
+            <p className="text-[11px] text-slate-500">
+              {file ? `${(file.size / 1024).toFixed(0)} KB` : ''}
+              {uploadedUrl && !isUploading && <span className="text-emerald-600 font-bold ml-2">✓ Uploaded</span>}
+              {isUploading && <span className="text-[#5b21b6] font-bold ml-2">Uploading…</span>}
+            </p>
+          </div>
+
+          {/* Remove button */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="w-7 h-7 rounded-full bg-red-100 hover:bg-red-200 text-red-500 flex items-center justify-center transition-colors shrink-0"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const CATEGORIES = [
   'Electrician', 'Plumber', 'Beautician', 'Mechanic', 'Carpenter', 
   'AC Repair', 'Appliance Repair', 'Painter', 'Cleaner', 'Gardener'
 ];
+
+// Helper: upload a single document to the backend Cloudinary endpoint
+async function uploadDocumentToCloud(file: File, docType: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('document', file);
+  formData.append('doc_type', docType);
+
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+  const res = await fetch(`${BASE_URL}/auth/upload-document`, {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
+  return data.url;
+}
 
 export default function ProviderRegister() {
   const [step, setStep] = useState<Step>(1);
@@ -49,6 +183,29 @@ export default function ProviderRegister() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bio, setBio] = useState('');
 
+  // ── OTP State ──
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '', '', '']);
+  const [resendTimer, setResendTimer] = useState(60);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // ── Document file state ──
+  const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
+  const [passportPhotoUrl, setPassportPhotoUrl] = useState<string | null>(null);
+  const [passportUploading, setPassportUploading] = useState(false);
+
+  const [citizenshipFront, setCitizenshipFront] = useState<File | null>(null);
+  const [citizenshipFrontUrl, setCitizenshipFrontUrl] = useState<string | null>(null);
+  const [citizenFrontUploading, setCitizenFrontUploading] = useState(false);
+
+  const [citizenshipBack, setCitizenshipBack] = useState<File | null>(null);
+  const [citizenshipBackUrl, setCitizenshipBackUrl] = useState<string | null>(null);
+  const [citizenBackUploading, setCitizenBackUploading] = useState(false);
+
+  const [certificate, setCertificate] = useState<File | null>(null);
+  const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
+  const [certUploading, setCertUploading] = useState(false);
+
   // Forms for different steps mapped manually or via useForm
   const { register, trigger, handleSubmit, formState: { errors }, watch } = useForm({
     defaultValues: { 
@@ -58,13 +215,19 @@ export default function ProviderRegister() {
       password: '',
       terms: false,
       experience: '3-5 years',
-      hourlyRate: '0',
       city: ''
     },
     mode: 'onTouched'
   });
 
   const watchTerms = watch('terms');
+
+  // OTP Timer
+  useEffect(() => {
+    let t: NodeJS.Timeout;
+    if (step === 4 && resendTimer > 0) t = setInterval(() => setResendTimer(p => p - 1), 1000);
+    return () => clearInterval(t);
+  }, [step, resendTimer]);
 
   const onNextStep1 = async () => {
     const isValid = await trigger(['fullName', 'email', 'phone', 'password', 'terms']);
@@ -77,7 +240,7 @@ export default function ProviderRegister() {
   };
 
   const onNextStep2 = async () => {
-    const isValid = await trigger(['experience', 'hourlyRate', 'city']);
+    const isValid = await trigger(['experience', 'city']);
     if (selectedCategories.length === 0) {
       toast.error('Please select at least one service category.');
       return;
@@ -86,41 +249,141 @@ export default function ProviderRegister() {
     setStep(3);
   };
 
+  // Upload a single file and update its URL state
+  const handleFileUpload = async (
+    file: File,
+    docType: string,
+    setUploading: (v: boolean) => void,
+    setUrl: (v: string | null) => void,
+  ) => {
+    setUploading(true);
+    try {
+      const url = await uploadDocumentToCloud(file, docType);
+      setUrl(url);
+      toast.success(`${docType.replace(/_/g, ' ')} uploaded successfully!`);
+    } catch (err: any) {
+      toast.error(err.message || 'Upload failed');
+      setUrl(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const onSubmitFinal = async (data: any) => {
-    // Collect all data + state to submit
-    const payload = {
-      role: 'PROVIDER',
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
-      password: data.password,
-      categories: selectedCategories,
-      experience: data.experience,
-      hourlyRate: data.hourlyRate,
-      city: data.city,
-      bio: bio
-      // Photos & docs would traditionally be uploaded here via FormData
-    };
-    
-    console.log("Submitting payload:", payload);
+    // Validate required documents
+    if (!passportPhoto && !passportPhotoUrl) {
+      toast.error('Please upload your passport size photo.');
+      return;
+    }
+    if (!citizenshipFront && !citizenshipFrontUrl) {
+      toast.error('Please upload citizenship front.');
+      return;
+    }
+    if (!citizenshipBack && !citizenshipBackUrl) {
+      toast.error('Please upload citizenship back.');
+      return;
+    }
 
     try {
       setIsLoading(true);
-      // For now we mock the API submission via authApi which registers the user
+
+      // Upload files and get URLs immediately instead of relying on state
+      let ppUrl = passportPhotoUrl;
+      if (passportPhoto && !ppUrl) {
+        setPassportUploading(true);
+        ppUrl = await uploadDocumentToCloud(passportPhoto, 'passport_photo');
+        setPassportPhotoUrl(ppUrl);
+        setPassportUploading(false);
+      }
+
+      let cfUrl = citizenshipFrontUrl;
+      if (citizenshipFront && !cfUrl) {
+        setCitizenFrontUploading(true);
+        cfUrl = await uploadDocumentToCloud(citizenshipFront, 'citizenship_front');
+        setCitizenshipFrontUrl(cfUrl);
+        setCitizenFrontUploading(false);
+      }
+
+      let cbUrl = citizenshipBackUrl;
+      if (citizenshipBack && !cbUrl) {
+        setCitizenBackUploading(true);
+        cbUrl = await uploadDocumentToCloud(citizenshipBack, 'citizenship_back');
+        setCitizenshipBackUrl(cbUrl);
+        setCitizenBackUploading(false);
+      }
+
+      let certUrl = certificateUrl;
+      if (certificate && !certUrl) {
+        setCertUploading(true);
+        certUrl = await uploadDocumentToCloud(certificate, 'certificate');
+        setCertificateUrl(certUrl);
+        setCertUploading(false);
+      }
+
+      // Register the provider
       await authApi.register({
         email: data.email,
         password: data.password,
         full_name: data.fullName,
         phone: data.phone,
-        role: 'PROVIDER'
+        role: 'PROVIDER',
+        categories: selectedCategories,
+        experience: data.experience,
+        city: data.city,
+        bio: bio || undefined,
+        documents: {
+          passport_photo: ppUrl,
+          citizenship_front: cfUrl,
+          citizenship_back: cbUrl,
+          certificate: certUrl || undefined,
+        }
       });
-      toast.success('Registration successful! Your application is under review.');
-      navigate('/login');
+      toast.success('Registration successful! Please verify your email.');
+      setRegisteredEmail(data.email);
+      setStep(4); // Go to OTP step
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to submit application');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /* OTP Handlers */
+  const handleDigitChange = (val: string, idx: number) => {
+    const clean = val.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[idx] = clean;
+    setDigits(next);
+    if (clean && idx < 5) inputRefs.current[idx + 1]?.focus();
+  };
+  const handleDigitKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+    if (e.key === 'Backspace' && !digits[idx] && idx > 0) inputRefs.current[idx - 1]?.focus();
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const otp = digits.join('');
+    if (otp.length !== 6) { toast.error('Enter all 6 digits'); return; }
+    try {
+      setIsLoading(true);
+      await authApi.verifyOtp({ email: registeredEmail, otp });
+      toast.success('Email verified! You will be notified once an admin approves your account.');
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to verify OTP');
+    } finally { setIsLoading(false); }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    try {
+      setIsLoading(true);
+      await authApi.resendOtp({ email: registeredEmail });
+      toast.success('A new verification code has been sent.');
+      setResendTimer(60);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to resend OTP');
+    } finally { setIsLoading(false); }
   };
 
   const toggleCategory = (cat: string) => {
@@ -162,7 +425,6 @@ export default function ProviderRegister() {
   );
 
   const inputClass = `w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm text-slate-800 transition-shadow transition-colors focus:ring-4 focus:ring-[#5b21b6]/20 focus:border-[#5b21b6]`;
-  const plainInputClass = `w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm text-slate-800 transition-shadow transition-colors focus:ring-4 focus:ring-[#5b21b6]/20 focus:border-[#5b21b6]`;
 
   return (
     <div className="min-h-screen grid lg:grid-cols-12 bg-white font-sans overflow-x-hidden">
@@ -256,7 +518,7 @@ export default function ProviderRegister() {
             </div>
           </div>
 
-          {renderStepper()}
+          {step !== 4 && renderStepper()}
 
           {/* ────── STEP 1: ACCOUNT ────── */}
           {step === 1 && (
@@ -317,7 +579,11 @@ export default function ProviderRegister() {
                 >
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    {...register('password', { required: 'Password is required', minLength: { value: 8, message: 'Minimum 8 characters' } })}
+                    {...register('password', { 
+                      required: 'Password is required', 
+                      minLength: { value: 8, message: 'Minimum 8 characters' },
+                      pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, message: 'Must include uppercase, lowercase, number and special character' }
+                    })}
                     placeholder="Create a strong password"
                     className={`${inputClass} pr-10 ${errors.password ? 'border-red-300' : ''}`}
                   />
@@ -378,34 +644,18 @@ export default function ProviderRegister() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Years of Experience" icon={<Briefcase size={16}/>}>
-                    <select 
-                      {...register('experience')}
-                      className={`${inputClass} appearance-none cursor-pointer pr-10`}
-                    >
-                      <option value="0-1 years">0-1 years</option>
-                      <option value="1-3 years">1-3 years</option>
-                      <option value="3-5 years">3-5 years</option>
-                      <option value="5-10 years">5-10 years</option>
-                      <option value="10+ years">10+ years</option>
-                    </select>
-                  </Field>
-
-                  <div className="mb-4">
-                     <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Hourly Rate (Rs.)</label>
-                     <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">Rs</span>
-                        <input
-                          type="number"
-                          {...register('hourlyRate')}
-                          placeholder="0"
-                          className={`${plainInputClass} pl-10 pr-12`}
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">/hr</span>
-                     </div>
-                  </div>
-                </div>
+                <Field label="Years of Experience" icon={<Briefcase size={16}/>}>
+                  <select 
+                    {...register('experience')}
+                    className={`${inputClass} appearance-none cursor-pointer pr-10`}
+                  >
+                    <option value="0-1 years">0-1 years</option>
+                    <option value="1-3 years">1-3 years</option>
+                    <option value="3-5 years">3-5 years</option>
+                    <option value="5-10 years">5-10 years</option>
+                    <option value="10+ years">10+ years</option>
+                  </select>
+                </Field>
 
                 <Field label="City / Service Area" icon={<MapPin size={16}/>} rightContext={<span className="pointer-events-none"><Check size={14} className="opacity-0"/></span>}>
                   <select 
@@ -460,47 +710,55 @@ export default function ProviderRegister() {
 
               <form onSubmit={handleSubmit(onSubmitFinal)} className="space-y-6">
                 
-                {/* Upload Blocks */}
-                <div className="space-y-2">
-                   <label className="block text-[13px] font-bold text-slate-700">Passport Size Photo <span className="text-[#4338ca]">*</span></label>
-                   <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 hover:border-[#5b21b6] hover:bg-[#5b21b6]/5 transition-all cursor-pointer flex gap-6 items-center bg-white group">
-                      <div className="w-16 h-20 bg-blue-50 border border-blue-100 rounded-lg flex flex-col items-center justify-center text-blue-400 group-hover:bg-white transition-colors shrink-0">
-                         <Camera size={24} className="mb-1 text-blue-500"/>
-                         <span className="text-[10px] font-bold">Photo</span>
-                      </div>
-                      <div className="flex-1">
-                         <h4 className="text-[14px] font-bold text-slate-800 mb-1">Upload passport size photo</h4>
-                         <ul className="text-[12px] text-slate-500 space-y-0.5 list-disc list-inside marker:text-slate-300">
-                           <li>White or light background</li>
-                           <li>Face clearly visible, no sunglasses</li>
-                           <li>35mm × 45mm (or equivalent)</li>
-                           <li>JPG or PNG • Max 2MB</li>
-                         </ul>
-                      </div>
-                   </div>
+                {/* Upload Blocks — now functional */}
+                <UploadZone
+                  label="Passport Size Photo"
+                  required
+                  file={passportPhoto}
+                  uploadedUrl={passportPhotoUrl}
+                  isUploading={passportUploading}
+                  onSelect={(f) => { setPassportPhoto(f); handleFileUpload(f, 'passport_photo', setPassportUploading, setPassportPhotoUrl); }}
+                  onRemove={() => { setPassportPhoto(null); setPassportPhotoUrl(null); }}
+                  accept="image/jpeg,image/png"
+                  maxMB={2}
+                  icon={<><Camera size={24} className="mb-1 text-blue-500"/><span className="text-[10px] font-bold">Photo</span></>}
+                  hints={['White or light background', 'Face clearly visible, no sunglasses', '35mm × 45mm (or equivalent)', 'JPG or PNG • Max 2MB']}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <UploadZone
+                    label="Citizenship (Front)"
+                    required
+                    file={citizenshipFront}
+                    uploadedUrl={citizenshipFrontUrl}
+                    isUploading={citizenFrontUploading}
+                    onSelect={(f) => { setCitizenshipFront(f); handleFileUpload(f, 'citizenship_front', setCitizenFrontUploading, setCitizenshipFrontUrl); }}
+                    onRemove={() => { setCitizenshipFront(null); setCitizenshipFrontUrl(null); }}
+                    compact
+                  />
+
+                  <UploadZone
+                    label="Citizenship (Back)"
+                    required
+                    file={citizenshipBack}
+                    uploadedUrl={citizenshipBackUrl}
+                    isUploading={citizenBackUploading}
+                    onSelect={(f) => { setCitizenshipBack(f); handleFileUpload(f, 'citizenship_back', setCitizenBackUploading, setCitizenshipBackUrl); }}
+                    onRemove={() => { setCitizenshipBack(null); setCitizenshipBackUrl(null); }}
+                    compact
+                  />
                 </div>
 
-                <div className="space-y-2">
-                   <label className="block text-[13px] font-bold text-slate-700">Citizenship Card / National ID <span className="text-[#4338ca]">*</span></label>
-                   <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 hover:border-[#5b21b6] hover:bg-[#5b21b6]/5 transition-all cursor-pointer flex flex-col items-center justify-center bg-white text-center py-8">
-                      <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-[#5b21b6] mb-3">
-                         <UploadCloud size={20} />
-                      </div>
-                      <h4 className="text-[14px] font-bold text-slate-800 mb-1">Click to upload</h4>
-                      <p className="text-[12px] text-slate-500">JPG, PNG or PDF • Max 5MB</p>
-                   </div>
-                </div>
-
-                <div className="space-y-2">
-                   <label className="block text-[13px] font-bold text-slate-700">Skill Certificate / Trade License <span className="text-gray-400 font-normal ml-1">(Optional but recommended)</span></label>
-                   <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 hover:border-[#5b21b6] hover:bg-[#5b21b6]/5 transition-all cursor-pointer flex flex-col items-center justify-center bg-white text-center py-8">
-                      <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-[#5b21b6] mb-3">
-                         <UploadCloud size={20} />
-                      </div>
-                      <h4 className="text-[14px] font-bold text-slate-800 mb-1">Click to upload certificate</h4>
-                      <p className="text-[12px] text-slate-500">JPG, PNG or PDF • Max 5MB</p>
-                   </div>
-                </div>
+                <UploadZone
+                  label="Skill Certificate / Trade License"
+                  required={false}
+                  file={certificate}
+                  uploadedUrl={certificateUrl}
+                  isUploading={certUploading}
+                  onSelect={(f) => { setCertificate(f); handleFileUpload(f, 'certificate', setCertUploading, setCertificateUrl); }}
+                  onRemove={() => { setCertificate(null); setCertificateUrl(null); }}
+                  compact
+                />
 
                 {/* Safe Banner */}
                 <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex gap-3 mt-6 items-start">
@@ -525,14 +783,57 @@ export default function ProviderRegister() {
             </div>
           )}
 
+          {/* ────── STEP 4: OTP VERIFICATION ────── */}
+          {step === 4 && (
+            <div className="w-full flex flex-col justify-center animate-in fade-in zoom-in-95 duration-500 py-10 pb-16">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 rounded-full mx-auto bg-[#5b21b6]/10 text-[#5b21b6] flex items-center justify-center mb-6">
+                  <CheckCircle2 size={32} />
+                </div>
+                <h2 className="text-[26px] font-extrabold text-slate-900 mb-2 tracking-tight">Verify Your Email</h2>
+                <p className="text-[15px] text-slate-500 font-medium">
+                  We've sent a 6-digit code to<br/>
+                  <span className="text-[#5b21b6] font-bold">{registeredEmail}</span>
+                </p>
+              </div>
+
+              <form onSubmit={handleOtpSubmit} className="max-w-xs mx-auto w-full">
+                <div className="flex justify-between gap-2 mb-8">
+                  {digits.map((d, i) => (
+                    <input
+                      key={i}
+                      ref={el => { inputRefs.current[i] = el; }}
+                      type="text" inputMode="numeric" maxLength={1}
+                      value={d}
+                      onChange={e => handleDigitChange(e.target.value, i)}
+                      onKeyDown={e => handleDigitKeyDown(e, i)}
+                      className={`w-12 h-14 text-center text-xl font-bold bg-slate-50 border-2 rounded-xl focus:bg-white outline-none transition-all ${d ? 'border-[#5b21b6]' : 'border-gray-200'} focus:ring-4 focus:ring-[#5b21b6]/20 focus:border-[#5b21b6]`}
+                    />
+                  ))}
+                </div>
+
+                <button type="submit" disabled={isLoading || digits.join('').length !== 6} className={`w-full py-3.5 rounded-xl text-[15px] font-bold text-white shadow-md ${digits.join('').length === 6 ? 'bg-[#5b21b6] hover:scale-[1.02]' : 'bg-gray-300 cursor-not-allowed'} transition-all flex items-center justify-center gap-2`}>
+                  {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Verify Email'}
+                </button>
+
+                <p className="text-center mt-6 text-[13px] font-medium text-slate-500">
+                  Didn't receive the code?{' '}
+                  <button type="button" onClick={handleResendOtp} disabled={resendTimer > 0 || isLoading} className={`font-bold ${resendTimer > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-[#5b21b6] hover:underline'}`}>
+                    {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Code'}
+                  </button>
+                </p>
+              </form>
+            </div>
+          )}
+
           {/* Footer Auth Link */}
           {step === 1 && (
-            <p className="m-auto mt-16 text-[13.5px] font-medium text-slate-500">
+            <p className="m-auto text-[13.5px] font-medium text-slate-500 pb-12 w-full text-center mt-16">
               Already have an account?{' '}
               <Link to="/login" className={`text-[#5b21b6] font-extrabold hover:underline`}>Sign in</Link>
             </p>
           )}
-          {step > 1 && (
+          {(step === 2 || step === 3) && (
             <div className="pb-12 text-center w-full">
               <p className="text-[13.5px] font-medium text-slate-500 mt-6">
                 Already have an account?{' '}

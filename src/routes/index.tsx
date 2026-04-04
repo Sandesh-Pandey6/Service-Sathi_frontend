@@ -5,6 +5,7 @@ import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import ProviderRegister from '@/pages/auth/ProviderRegister';
 import RoleSelection from '@/pages/auth/RoleSelection';
+import RegisterRoleSelector from '@/pages/auth/RegisterRoleSelector';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
 import UserLayout from '@/components/layout/UserLayout';
 import UserDashboard from '@/pages/user/Dashboard';
@@ -59,8 +60,9 @@ export const routes = [
       { index: true, element: <HomePage /> },
       { path: 'services', element: <ServicesPage /> },
       { path: 'login', element: <Login /> },
+      { path: 'login-role', element: <RoleSelection /> },
       { path: 'forgot-password', element: <ForgotPassword /> },
-      { path: 'register', element: <RoleSelection /> },
+      { path: 'register', element: <RegisterRoleSelector /> },
       { path: 'register/form', element: <Register /> },
       { path: 'register/provider', element: <ProviderRegister /> },
     ],
