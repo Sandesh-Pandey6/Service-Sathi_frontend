@@ -198,8 +198,8 @@ export const AdminSidebar: React.FC<Props> = ({ collapsed, onToggle, onMobileClo
             </div>
           </div>
         )}
-        <button
-           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white transition-colors hidden lg:flex"
+        <button  //side -button side -button
+           className="w-full flex-hidden items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white transition-colors hidden lg:flex"
            onClick={onToggle}
         >
           <ChevronLeft size={16} className="transform -rotate-90" />
