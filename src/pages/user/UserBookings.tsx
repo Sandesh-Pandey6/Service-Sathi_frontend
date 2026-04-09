@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   Clock, MapPin, Star, X, Plus, CheckCircle2,
   XCircle, AlertCircle, Phone, Mail, Calendar,
-  CreditCard, Info, FileText, Loader2
+  CreditCard, Info, FileText, Loader2, Send
 } from 'lucide-react';
 import { bookingsApi } from '@/lib/api';
+import { createReviewApi } from '@/api/reviews.api';
+import toast from 'react-hot-toast';
 
 type BookingStatus = 'CONFIRMED' | 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'IN_PROGRESS' | 'REJECTED';
 
@@ -156,7 +158,104 @@ function ViewDetailsModal({ booking, onClose }: { booking: any; onClose: () => v
   );
 }
 
-function BookingCard({ booking, onShowDetails }: { booking: any; onShowDetails: () => void }) {
+function ReviewModal({ booking, onClose, onSuccess }: { booking: any; onClose: () => void; onSuccess: () => void }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (rating === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+    try {
+      setLoading(true);
+      await createReviewApi({
+        booking_id: booking.id,
+        rating,
+        comment,
+      });
+      toast.success('Review submitted successfully!');
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to submit review');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', animation: 'fadeIn 0.2s ease',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.15)', animation: 'slideUp 0.3s ease',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 28px 20px', borderBottom: '1px solid #f1f5f9' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Rate Provider</h2>
+          <button onClick={onClose} style={{
+            width: '36px', height: '36px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s'
+          }}>
+            <X size={16} color="#64748b" />
+          </button>
+        </div>
+
+        <div style={{ padding: '24px 28px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button 
+                key={star} 
+                onClick={() => setRating(star)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', outline: 'none', padding: 0 }}
+              >
+                <Star size={36} fill={star <= rating ? '#facc15' : 'transparent'} color={star <= rating ? '#facc15' : '#cbd5e1'} strokeWidth={1.5} />
+              </button>
+            ))}
+          </div>
+          
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+              Your Review (Optional)
+            </label>
+            <textarea 
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="How was your experience?"
+              rows={4}
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0',
+                background: '#f8fafc', fontSize: '14px', color: '#0f172a', resize: 'none', outline: 'none'
+              }}
+            />
+          </div>
+
+          <button 
+            onClick={handleSubmit} 
+            disabled={loading}
+            style={{ 
+              width: '100%', padding: '14px', borderRadius: '14px', border: 'none', background: '#dc2626', 
+              fontSize: '15px', fontWeight: 700, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+            }}
+          >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <><Send size={18} /> Submit Review</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingCard({ booking, onShowDetails, onRate }: { booking: any; onShowDetails: () => void; onRate: () => void }) {
   const badge = getStatusBadge(booking.status as BookingStatus);
   const BadgeIcon = badge.icon;
   const pName = booking.provider?.user?.full_name || 'Provider';
@@ -208,9 +307,24 @@ function BookingCard({ booking, onShowDetails }: { booking: any; onShowDetails: 
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #f8fafc' }}>
-        <button onClick={onShowDetails} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px solid #e2e8f0', color: '#64748b', padding: '10px 18px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
-          <Info size={16} /> View Full Details
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #f8fafc' }}>
+        <div>
+          {booking.status === 'COMPLETED' && !booking.review && (
+            <button onClick={onRate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px solid #fecaca', color: '#dc2626', padding: '10px 18px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
+              Rate this booking
+            </button>
+          )}
+          {booking.review && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fefce8', padding: '6px 10px', borderRadius: '8px', border: '1px solid #fef08a' }}>
+                <Star size={14} fill="#facc15" color="#facc15" />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#854d0e' }}>{booking.review.rating}.0 Rated</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <button onClick={onShowDetails} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#0f172a', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
+          View Details
         </button>
       </div>
     </div>
@@ -220,6 +334,7 @@ function BookingCard({ booking, onShowDetails }: { booking: any; onShowDetails: 
 export default function UserBookings() {
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming');
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+  const [ratingBooking, setRatingBooking] = useState<any | null>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -286,12 +401,28 @@ export default function UserBookings() {
           </div>
         ) : (
           currentBookings.map((booking: any) => (
-            <BookingCard key={booking.id} booking={booking} onShowDetails={() => setSelectedBooking(booking)} />
+            <BookingCard 
+              key={booking.id} 
+              booking={booking} 
+              onShowDetails={() => setSelectedBooking(booking)} 
+              onRate={() => setRatingBooking(booking)}
+            />
           ))
         )}
       </div>
 
       {selectedBooking && <ViewDetailsModal booking={selectedBooking} onClose={() => setSelectedBooking(null)} />}
+      {ratingBooking && (
+        <ReviewModal 
+          booking={ratingBooking} 
+          onClose={() => setRatingBooking(null)} 
+          onSuccess={() => {
+            setRatingBooking(null);
+            // Quick local state update to avoid fetching again just for this
+            setBookings(prev => prev.map(b => b.id === ratingBooking.id ? { ...b, review: { rating: 5 } } : b));
+          }} 
+        />
+      )}
     </div>
   );
 }

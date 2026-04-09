@@ -125,8 +125,8 @@ export default function ProviderBookings() {
                     </div>
                   )}
                   {b.status === 'CONFIRMED' && (
-                    <button onClick={() => handleStatusUpdate(b.id, 'COMPLETED')} className="flex items-center gap-1.5 bg-[#00b341] text-white px-3 py-1.5 rounded-lg text-[12px] font-bold hover:bg-[#009938] transition-colors">
-                      <CheckCircle2 size={14} /> Mark Done
+                    <button onClick={() => handleStatusUpdate(b.id, 'COMPLETED')} className="bg-[#00b341] text-white px-3 py-1.5 rounded-lg text-[12px] font-bold hover:bg-[#009938] transition-colors">
+                      Mark Done
                     </button>
                   )}
                   {(b.status === 'COMPLETED' || b.status === 'CANCELLED') && (
