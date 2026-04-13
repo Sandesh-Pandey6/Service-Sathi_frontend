@@ -15,8 +15,6 @@ import {
   Star, 
   BarChart3, 
   Settings, 
-  ChevronLeft, 
-  ChevronRight, 
   LogOut,
   Bell,
   HelpCircle,
@@ -118,19 +116,12 @@ export const AdminSidebar: React.FC<Props> = ({ collapsed, onToggle, onMobileClo
         )}
 
         {/* Mobile close button */}
-        {isMobileOpen && onMobileClose ? (
+        {isMobileOpen && onMobileClose && (
           <button
             onClick={onMobileClose}
             className="ml-auto text-slate-400 hover:text-white transition-colors bg-slate-800 p-1.5 rounded-lg border border-slate-700 lg:hidden"
           >
             <X size={18} />
-          </button>
-        ) : (
-          <button
-            onClick={onToggle}
-            className={`ml-auto text-slate-400 hover:text-white transition-colors bg-slate-800 p-1.5 rounded-lg border border-slate-700 hidden lg:block ${isCollapsed ? 'mx-auto mb-2' : ''}`}
-          >
-            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
         )}
       </div>
@@ -198,13 +189,7 @@ export const AdminSidebar: React.FC<Props> = ({ collapsed, onToggle, onMobileClo
             </div>
           </div>
         )}
-        <button  //side -button side -button
-           className="w-full flex-hidden items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white transition-colors hidden lg:flex"
-           onClick={onToggle}
-        >
-          <ChevronLeft size={16} className="transform -rotate-90" />
-          {!isCollapsed && <span>Collapse</span>}
-        </button>
+
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-rose-400 transition-colors"

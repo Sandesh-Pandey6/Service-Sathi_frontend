@@ -63,12 +63,16 @@ export default function AdminProviders() {
     }
   };
 
-  const openDocs = (docs: any) => {
-    if (!docs) {
+  const openDocs = (providerProfile: any) => {
+    if (!providerProfile?.documents) {
       toast.error('No documents found for this provider');
       return;
     }
-    setSelectedDocs(docs);
+    setSelectedDocs({
+      documents: providerProfile.documents,
+      documents_verified: providerProfile.documents_verified || {},
+      profileId: providerProfile.id,
+    });
     setDocsModalOpen(true);
   };
 
@@ -147,7 +151,7 @@ export default function AdminProviders() {
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><StatusBadge status={isVerified ? 'verified' : 'pending'} /></td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openDocs(p.provider_profile?.documents)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <button onClick={() => openDocs(p.provider_profile)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
                           View Documents
                         </button>
                         {!isVerified && (
@@ -191,7 +195,7 @@ export default function AdminProviders() {
         </div>
       )}
 
-      {/* Document View Modal */}
+      {/* Document View Modal with per-document approval */}
       {docsModalOpen && selectedDocs && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
@@ -200,22 +204,83 @@ export default function AdminProviders() {
               <button onClick={() => setDocsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><span className="text-2xl leading-none">&times;</span></button>
             </div>
             <div className="p-6 overflow-y-auto flex-1 grid gap-6">
-              {Object.entries(selectedDocs).map(([key, url]) => {
+              {Object.entries(selectedDocs.documents || {}).map(([key, url]) => {
                 if (!url || typeof url !== 'string') return null;
+                const verified = (selectedDocs.documents_verified || {}) as Record<string, any>;
+                const docStatus = verified[key]?.status || 'pending';
+                const statusColors: Record<string, string> = {
+                  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+                  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                  rejected: 'bg-red-50 text-red-700 border-red-200',
+                };
                 return (
-                  <div key={key} className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
-                    <div className="bg-slate-800 px-4 py-2 text-white font-semibold text-sm capitalize">
-                      {key.replace(/_/g, ' ')}
+                  <div key={key} className="border border-gray-200 rounded-xl bg-white shadow-sm">
+                    {/* Header */}
+                    <div className="bg-slate-800 px-4 py-2.5 text-white font-semibold text-sm capitalize flex items-center justify-between rounded-t-xl">
+                      <span>{key.replace(/_/g, ' ')}</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusColors[docStatus] || statusColors.pending}`}>
+                        {docStatus.charAt(0).toUpperCase() + docStatus.slice(1)}
+                      </span>
                     </div>
-                    {url.match(/\.(jpeg|jpg|gif|png)$/) != null || url.includes('cloudinary') ? (
-                      <a href={url} target="_blank" rel="noreferrer" title="Click to view full image">
-                        <img src={url} alt={key} className="w-full h-auto object-contain bg-gray-100 max-h-[400px] hover:opacity-90 transition-opacity cursor-pointer" />
-                      </a>
-                    ) : (
-                      <div className="p-6 text-center">
-                        <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">View Document</a>
-                      </div>
-                    )}
+
+                    {/* Image / link preview — compact */}
+                    <div className="p-3 bg-gray-50 border-b border-gray-100">
+                      {url.match(/\.(jpeg|jpg|gif|png)$/) != null || url.includes('cloudinary') ? (
+                        <a href={url} target="_blank" rel="noreferrer" title="Click to view full image">
+                          <img src={url} alt={key} className="w-full h-auto object-contain bg-white rounded-lg max-h-[200px] hover:opacity-90 transition-opacity cursor-pointer border border-gray-100" />
+                        </a>
+                      ) : (
+                        <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium text-sm block text-center py-4">📄 View Document</a>
+                      )}
+                    </div>
+
+                    {/* Action buttons — always visible */}
+                    <div className="px-4 py-3 flex items-center gap-2 bg-white rounded-b-xl">
+                      {docStatus !== 'approved' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await adminApi.approveDocument(selectedDocs.profileId, key);
+                              toast.success(`"${key.replace(/_/g, ' ')}" approved`);
+                              const v = { ...(selectedDocs.documents_verified || {}) };
+                              v[key] = { status: 'approved' };
+                              setSelectedDocs({ ...selectedDocs, documents_verified: v });
+                              fetchProviders();
+                            } catch (err: any) {
+                              toast.error(err.response?.data?.error || 'Failed to approve');
+                            }
+                          }}
+                          className="px-5 py-2 rounded-lg text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-sm"
+                        >
+                          ✓ Approve
+                        </button>
+                      )}
+                      {docStatus !== 'rejected' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await adminApi.rejectDocument(selectedDocs.profileId, key, 'Document not valid');
+                              toast.success(`"${key.replace(/_/g, ' ')}" rejected`);
+                              const v = { ...(selectedDocs.documents_verified || {}) };
+                              v[key] = { status: 'rejected' };
+                              setSelectedDocs({ ...selectedDocs, documents_verified: v });
+                              fetchProviders();
+                            } catch (err: any) {
+                              toast.error(err.response?.data?.error || 'Failed to reject');
+                            }
+                          }}
+                          className="px-5 py-2 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+                        >
+                          ✕ Reject
+                        </button>
+                      )}
+                      {docStatus === 'approved' && (
+                        <span className="text-sm font-bold text-emerald-600 ml-2">✓ Approved — visible to customers</span>
+                      )}
+                      {docStatus === 'rejected' && (
+                        <span className="text-sm font-bold text-red-600 ml-2">✕ Rejected</span>
+                      )}
+                    </div>
                   </div>
                 );
               })}

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, MapPin } from 'lucide-react';
+import { Star, MapPin, Navigation } from 'lucide-react';
 
 export interface Provider {
   id: number;
@@ -15,6 +15,7 @@ export interface Provider {
   available: boolean;
   badge?: 'Top Rated' | 'Verified' | 'New';
   description: string;
+  distance_km?: number;
 }
 
 interface ProviderCardProps {
@@ -89,6 +90,12 @@ export default function ProviderCard({ provider, category }: ProviderCardProps) 
       {/* Right side */}
       <div className="flex flex-col items-end gap-2.5 flex-shrink-0">
         <span className="text-[16px] font-bold text-slate-900">Rs. {provider.price}</span>
+        {provider.distance_km != null && (
+          <span className="flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+            <Navigation size={11} />
+            {provider.distance_km < 1 ? `${Math.round(provider.distance_km * 1000)} m` : `${provider.distance_km} km`}
+          </span>
+        )}
         <Link
           to={`/user/services/${category}/${provider.id}`}
           className="bg-red-500 hover:bg-red-600 text-white text-[13px] font-bold px-5 py-2 rounded-lg transition-colors whitespace-nowrap"

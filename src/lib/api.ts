@@ -93,6 +93,11 @@ export const adminApi = {
   // Settings — categories
   createCategory: (data: { name: string; description?: string; icon?: string }) =>
     api.post('/services/categories', data),
+  // Document approval
+  approveDocument: (providerId: string, docKey: string) =>
+    api.put(`/admin/providers/${providerId}/documents/approve`, { doc_key: docKey }),
+  rejectDocument: (providerId: string, docKey: string, reason?: string) =>
+    api.put(`/admin/providers/${providerId}/documents/reject`, { doc_key: docKey, reason }),
 };
 
 // Users
@@ -123,6 +128,8 @@ export const servicesApi = {
   list: (params?: Record<string, unknown>) => api.get('/services', { params }),
   getById: (id: string) => api.get(`/services/${id}`),
   search: (params?: Record<string, unknown>) => api.get('/services/search', { params }),
+  nearby: (params: { latitude: number; longitude: number; radius_km?: number; q?: string; category_id?: string; page?: number; limit?: number }) =>
+    api.get('/services/nearby', { params }),
   listCategories: () => api.get('/services/categories'),
   listCategoriesAdmin: () => api.get('/services/categories/admin'),
   getProviderServices: (providerId: string) => api.get(`/services/provider/${providerId}`),

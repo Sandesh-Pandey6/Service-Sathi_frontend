@@ -1,13 +1,17 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Star,
   Search,
   MapPin,
   ChevronDown,
-  Wrench
+  Wrench,
+  Navigation,
+  X,
+  Crosshair,
+  Check,
 } from 'lucide-react';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { servicesApi } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
@@ -24,52 +28,163 @@ const COLORS = [
   { bg: 'bg-lime-50/50', border: 'border-lime-200/60', text: 'text-lime-500', outer: 'border-lime-200' },
 ];
 
+/* ── Nepal city coordinates for city-based location search ── */
+const NEPAL_CITIES = [
+  { name: 'Kathmandu', latitude: 27.7172, longitude: 85.324 },
+  { name: 'Lalitpur', latitude: 27.6588, longitude: 85.3247 },
+  { name: 'Bhaktapur', latitude: 27.672, longitude: 85.4298 },
+  { name: 'Pokhara', latitude: 28.2096, longitude: 83.9856 },
+  { name: 'Biratnagar', latitude: 26.4525, longitude: 87.2718 },
+  { name: 'Birgunj', latitude: 27.0104, longitude: 84.8779 },
+  { name: 'Dharan', latitude: 26.8122, longitude: 87.2833 },
+  { name: 'Butwal', latitude: 27.7006, longitude: 83.4483 },
+  { name: 'Hetauda', latitude: 27.4287, longitude: 85.032 },
+  { name: 'Janakpur', latitude: 26.7288, longitude: 85.9263 },
+  { name: 'Bharatpur', latitude: 27.6833, longitude: 84.4333 },
+  { name: 'Dhangadhi', latitude: 28.6967, longitude: 80.5986 },
+];
+
+type LocationState =
+  | { type: 'none' }
+  | { type: 'city'; name: string; latitude: number; longitude: number }
+  | { type: 'gps'; latitude: number; longitude: number };
+
 export default function UserServices() {
+  const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [isSearching, setIsSearching] = useState(false);
 
+  // Location state
+  const [location, setLocation] = useState<LocationState>({ type: 'none' });
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Parse URL params on mount (from HomePage navigation)
   useEffect(() => {
-    loadInitialData();
+    const lat = searchParams.get('lat');
+    const lng = searchParams.get('lng');
+    const city = searchParams.get('city');
+    if (lat && lng) {
+      setLocation({ type: 'gps', latitude: parseFloat(lat), longitude: parseFloat(lng) });
+    } else if (city) {
+      const found = NEPAL_CITIES.find(c => c.name.toLowerCase() === city.toLowerCase());
+      if (found) {
+        setLocation({ type: 'city', name: found.name, latitude: found.latitude, longitude: found.longitude });
+      }
+    }
   }, []);
 
-  const loadInitialData = async () => {
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setLocationOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Load initial data
+  useEffect(() => {
+    loadData();
+  }, [location]);
+
+  // Debounced search
+  useEffect(() => {
+    const delayDebounceFx = setTimeout(() => {
+      loadData();
+    }, 400);
+    return () => clearTimeout(delayDebounceFx);
+  }, [searchTerm]);
+
+  const loadData = async () => {
     try {
-      setLoading(true);
-      const [catsRes, provRes] = await Promise.all([
-        servicesApi.listCategories(),
-        servicesApi.search({ limit: 4 }) // top 4 based on backend default sorting
-      ]);
+      setIsSearching(true);
+
+      // Always load categories
+      const catsPromise = servicesApi.listCategories();
+
+      let provPromise;
+      const hasCoords = location.type === 'gps' || location.type === 'city';
+
+      if (hasCoords) {
+        const coords = location as { latitude: number; longitude: number };
+        provPromise = servicesApi.nearby({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          radius_km: 50,
+          q: searchTerm || undefined,
+          limit: 20,
+        });
+      } else if (searchTerm) {
+        provPromise = servicesApi.search({ q: searchTerm, limit: 20 });
+      } else {
+        provPromise = servicesApi.search({ limit: 4 });
+      }
+
+      const [catsRes, provRes] = await Promise.all([catsPromise, provPromise]);
       setCategories(Array.isArray(catsRes.data) ? catsRes.data : (catsRes.data.categories || []));
       setProviders(Array.isArray(provRes.data) ? provRes.data : (provRes.data.services || []));
     } catch (err) {
-      console.error('Failed to load initial data', err);
+      console.error('Failed to load data', err);
     } finally {
       setLoading(false);
+      setIsSearching(false);
     }
   };
 
-  useEffect(() => {
-    if (searchTerm === '') {
-      loadInitialData();
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setGpsError('Geolocation is not supported by your browser');
       return;
     }
-    const delayDebounceFx = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const res = await servicesApi.search({ q: searchTerm, limit: 10 });
-        setProviders(Array.isArray(res.data) ? res.data : (res.data.services || []));
-      } catch (err) {
-        console.error('Search failed', err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 400);
+    setGpsLoading(true);
+    setGpsError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          type: 'gps',
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setGpsLoading(false);
+        setLocationOpen(false);
+      },
+      (err) => {
+        setGpsError(
+          err.code === 1
+            ? 'Permission denied. Please allow location access.'
+            : 'Could not get your location. Try again.'
+        );
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
-    return () => clearTimeout(delayDebounceFx);
-  }, [searchTerm]);
+  const handleCitySelect = (city: typeof NEPAL_CITIES[0]) => {
+    setLocation({ type: 'city', name: city.name, latitude: city.latitude, longitude: city.longitude });
+    setLocationOpen(false);
+  };
+
+  const clearLocation = () => {
+    setLocation({ type: 'none' });
+    setLocationOpen(false);
+  };
+
+  const locationLabel =
+    location.type === 'gps'
+      ? 'My Location'
+      : location.type === 'city'
+        ? location.name
+        : 'All Locations';
+
   return (
     <div style={{ padding: '32px', width: '100%', boxSizing: 'border-box' }}>
 
@@ -92,10 +207,11 @@ export default function UserServices() {
         background: '#ffffff',
         border: '1px solid #e2e8f0',
         borderRadius: '12px',
-        overflow: 'hidden',
-        marginBottom: '32px',
+        overflow: 'visible',
+        marginBottom: '12px',
         boxSizing: 'border-box',
         minWidth: 0,
+        position: 'relative',
       }}>
         {/* Left: search input */}
         <div style={{
@@ -130,34 +246,214 @@ export default function UserServices() {
         {/* Divider */}
         <div style={{ width: '1px', height: '36px', background: '#e2e8f0', flexShrink: 0 }} />
 
-        {/* Right: location button */}
-        <button
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '11px 20px',
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 700,
-            color: '#334155',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-            fontFamily: 'inherit',
-          }}
-        >
-          <MapPin size={16} color="#ef4444" />
-          All Locations
-          <ChevronDown size={14} color="#94a3b8" strokeWidth={3} style={{ marginLeft: '2px' }} />
-        </button>
+        {/* Right: location dropdown */}
+        <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => setLocationOpen(!locationOpen)}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '11px 20px',
+              border: 'none',
+              outline: 'none',
+              background: location.type !== 'none' ? '#eff6ff' : 'transparent',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: location.type !== 'none' ? '#2563eb' : '#334155',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              fontFamily: 'inherit',
+              borderRadius: '0 12px 12px 0',
+              transition: 'background 0.15s',
+            }}
+          >
+            {location.type === 'gps' ? (
+              <Crosshair size={16} color="#2563eb" />
+            ) : (
+              <MapPin size={16} color={location.type !== 'none' ? '#2563eb' : '#ef4444'} />
+            )}
+            {locationLabel}
+            {location.type !== 'none' ? (
+              <X
+                size={14}
+                color="#94a3b8"
+                strokeWidth={3}
+                style={{ marginLeft: '2px', cursor: 'pointer' }}
+                onClick={(e) => { e.stopPropagation(); clearLocation(); }}
+              />
+            ) : (
+              <ChevronDown size={14} color="#94a3b8" strokeWidth={3} style={{ marginLeft: '2px' }} />
+            )}
+          </button>
+
+          {/* Dropdown panel */}
+          {locationOpen && (
+            <div style={{
+              position: 'absolute',
+              top: 'calc(100% + 6px)',
+              right: 0,
+              width: '280px',
+              background: '#fff',
+              borderRadius: '16px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+              border: '1px solid #e2e8f0',
+              zIndex: 100,
+              padding: '8px',
+              animation: 'fadeIn 0.15s ease-out',
+            }}>
+              {/* GPS button */}
+              <button
+                onClick={handleUseMyLocation}
+                disabled={gpsLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: 'none',
+                  outline: 'none',
+                  background: location.type === 'gps' ? '#eff6ff' : '#f8fafc',
+                  borderRadius: '12px',
+                  cursor: gpsLoading ? 'wait' : 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: '#1e40af',
+                  fontFamily: 'inherit',
+                  transition: 'background 0.15s',
+                  marginBottom: '4px',
+                }}
+              >
+                {gpsLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Crosshair size={16} />
+                )}
+                <span style={{ flex: 1, textAlign: 'left' }}>
+                  {gpsLoading ? 'Detecting location...' : 'Use My Location'}
+                </span>
+                {location.type === 'gps' && <Check size={16} color="#2563eb" />}
+              </button>
+
+              {gpsError && (
+                <p style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600, padding: '4px 14px', margin: 0 }}>
+                  {gpsError}
+                </p>
+              )}
+
+              {/* Divider + cities label */}
+              <div style={{ padding: '8px 14px 6px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Popular Cities
+              </div>
+
+              {/* City list */}
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {NEPAL_CITIES.map((city) => (
+                  <button
+                    key={city.name}
+                    onClick={() => handleCitySelect(city)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      width: '100%',
+                      padding: '9px 14px',
+                      border: 'none',
+                      outline: 'none',
+                      background: location.type === 'city' && (location as any).name === city.name ? '#eff6ff' : 'transparent',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#334155',
+                      fontFamily: 'inherit',
+                      transition: 'background 0.1s',
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = location.type === 'city' && (location as any).name === city.name ? '#eff6ff' : 'transparent')}
+                  >
+                    <MapPin size={14} color="#94a3b8" />
+                    <span style={{ flex: 1 }}>{city.name}</span>
+                    {location.type === 'city' && (location as any).name === city.name && <Check size={14} color="#2563eb" />}
+                  </button>
+                ))}
+              </div>
+
+              {/* All locations */}
+              <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '4px', paddingTop: '4px' }}>
+                <button
+                  onClick={clearLocation}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '9px 14px',
+                    border: 'none',
+                    outline: 'none',
+                    background: location.type === 'none' ? '#f1f5f9' : 'transparent',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#64748b',
+                    fontFamily: 'inherit',
+                    textAlign: 'left',
+                  }}
+                >
+                  <X size={14} color="#94a3b8" />
+                  <span>All Locations</span>
+                  {location.type === 'none' && <Check size={14} color="#64748b" />}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* ── Active location indicator ── */}
+      {location.type !== 'none' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          background: '#eff6ff',
+          borderRadius: '10px',
+          marginBottom: '24px',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: '#1e40af',
+        }}>
+          <Navigation size={14} />
+          <span>
+            Showing services near{' '}
+            <strong>{location.type === 'gps' ? 'your location' : (location as any).name}</strong>
+            {' '}(within 50 km)
+          </span>
+          <button
+            onClick={clearLocation}
+            style={{
+              marginLeft: 'auto',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* ── Categories Grid ── */}
-      {!searchTerm && !loading && (
+      {!searchTerm && !loading && location.type === 'none' && (
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -189,14 +485,20 @@ export default function UserServices() {
         </div>
       )}
 
-      {/* ── Top Rated Providers / Search Results ── */}
+      {/* ── Top Rated Providers / Search Results / Nearby Results ── */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            {searchTerm ? 'Search Results' : 'Top Rated Providers'}
+            {location.type !== 'none'
+              ? `Nearby Services`
+              : searchTerm
+                ? 'Search Results'
+                : 'Top Rated Providers'}
           </h2>
           <span style={{ fontSize: '13px', fontWeight: 500, color: '#94a3b8' }}>
-            {searchTerm ? `Found ${providers.length} matches` : 'Across all categories'}
+            {searchTerm || location.type !== 'none'
+              ? `Found ${providers.length} matches`
+              : 'Across all categories'}
           </span>
         </div>
 
@@ -206,7 +508,22 @@ export default function UserServices() {
           </div>
         ) : providers.length === 0 ? (
           <div className="text-center py-10 bg-slate-50 rounded-2xl border border-slate-100">
-             <p className="text-slate-400 font-medium">No services found matching your criteria.</p>
+            <div className="flex flex-col items-center gap-3">
+              <MapPin size={32} className="text-slate-300" />
+              <p className="text-slate-400 font-medium">
+                {location.type !== 'none'
+                  ? 'No services found near this location. Try increasing the search area or choose a different location.'
+                  : 'No services found matching your criteria.'}
+              </p>
+              {location.type !== 'none' && (
+                <button
+                  onClick={clearLocation}
+                  className="text-sm font-bold text-red-500 hover:text-red-600 transition-colors"
+                >
+                  Clear location filter
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -215,7 +532,8 @@ export default function UserServices() {
               const user = provider.user || {};
               const initials = user.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase() || 'P';
               const name = user.full_name || 'Provider';
-              const location = provider.city || 'Nepal';
+              const locationStr = provider.city || 'Nepal';
+              const distanceKm = service.distance_km;
               return (
               <div
                 key={service.id}
@@ -251,7 +569,7 @@ export default function UserServices() {
                       )}
                     </div>
                     <p style={{ fontSize: '12px', fontWeight: 500, color: '#64748b', margin: '0 0 6px 0' }}>
-                      {service.title} · {location}
+                      {service.title} · {locationStr}
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Star size={14} fill="#facc15" color="#facc15" />
@@ -262,6 +580,22 @@ export default function UserServices() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Rs. {service.price}</div>
+                  {distanceKm != null && (
+                    <span style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#2563eb',
+                      background: '#eff6ff',
+                      padding: '3px 10px',
+                      borderRadius: '8px',
+                    }}>
+                      <Navigation size={11} />
+                      {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm} km`}
+                    </span>
+                  )}
                   <Link
                     to={`/user/services/${service.category_id}/${provider.id}`}
                     style={{
@@ -279,6 +613,14 @@ export default function UserServices() {
           </div>
         )}
       </div>
+
+      {/* Dropdown animation keyframes */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

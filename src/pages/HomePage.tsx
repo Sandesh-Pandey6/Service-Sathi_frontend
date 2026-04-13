@@ -20,7 +20,8 @@ import {
   Calendar,
   ShieldCheck
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 const categories = [
   { icon: Zap, label: 'Electrician', count: '120+ pros', bg: 'bg-yellow-50', text: 'text-yellow-600' },
@@ -40,6 +41,24 @@ const professionals = [
 ];
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const [heroSearch, setHeroSearch] = useState('');
+  const [heroCity, setHeroCity] = useState('kathmandu');
+
+  const handleHeroSearch = () => {
+    const params = new URLSearchParams();
+    if (heroSearch.trim()) params.set('q', heroSearch.trim());
+    if (heroCity) params.set('city', heroCity);
+    navigate(`/user/services?${params.toString()}`);
+  };
+
+  const handlePopularClick = (term: string) => {
+    const params = new URLSearchParams();
+    params.set('q', term);
+    if (heroCity) params.set('city', heroCity);
+    navigate(`/user/services?${params.toString()}`);
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 w-full overflow-x-hidden">
       {/* --- NAVBAR --- */}
@@ -97,6 +116,9 @@ export default function HomePage() {
     <Search className="text-gray-400 mr-3 shrink-0" size={18} />
     <input
       type="text"
+      value={heroSearch}
+      onChange={(e) => setHeroSearch(e.target.value)}
+      onKeyDown={(e) => e.key === 'Enter' && handleHeroSearch()}
       placeholder="What service do you need?"
       className="w-full bg-transparent outline-none text-slate-800 placeholder:text-gray-400 text-sm"
     />
@@ -108,16 +130,28 @@ export default function HomePage() {
   {/* Location */}
   <div className="flex items-center px-4">
     <MapPin className="text-red-500 mr-2 shrink-0" size={18} />
-    <select className="bg-transparent outline-none text-slate-800 text-sm font-medium cursor-pointer pr-1">
+    <select
+      value={heroCity}
+      onChange={(e) => setHeroCity(e.target.value)}
+      className="bg-transparent outline-none text-slate-800 text-sm font-medium cursor-pointer pr-1"
+    >
       <option value="kathmandu">Kathmandu</option>
       <option value="lalitpur">Lalitpur</option>
       <option value="bhaktapur">Bhaktapur</option>
       <option value="pokhara">Pokhara</option>
+      <option value="biratnagar">Biratnagar</option>
+      <option value="birgunj">Birgunj</option>
+      <option value="dharan">Dharan</option>
+      <option value="butwal">Butwal</option>
+      <option value="bharatpur">Bharatpur</option>
     </select>
   </div>
 
   {/* Search Button */}
-  <button className="shrink-0 rounded-full bg-red-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-red-700 transition flex items-center gap-2">
+  <button
+    onClick={handleHeroSearch}
+    className="shrink-0 rounded-full bg-red-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-red-700 transition flex items-center gap-2"
+  >
     <Search size={16} /> Search
   </button>
 
@@ -126,10 +160,10 @@ export default function HomePage() {
           <div className="flex items-center gap-4 text-sm text-white/90 mt-2 font-medium">
             <span className="text-white/80">Popular:</span>
             <div className="flex gap-4">
-              <span className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white">Electrician</span>
-              <span className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white hidden sm:inline">Plumber</span>
-              <span className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white hidden sm:inline">AC Repair</span>
-              <span className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white hidden md:inline">Beautician</span>
+              <span onClick={() => handlePopularClick('Electrician')} className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white">Electrician</span>
+              <span onClick={() => handlePopularClick('Plumber')} className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white hidden sm:inline">Plumber</span>
+              <span onClick={() => handlePopularClick('AC Repair')} className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white hidden sm:inline">AC Repair</span>
+              <span onClick={() => handlePopularClick('Beautician')} className="hover:text-white transition-colors cursor-pointer border-b border-white/30 hover:border-white hidden md:inline">Beautician</span>
             </div>
           </div>
         </div>
