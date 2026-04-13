@@ -14,25 +14,12 @@ import {
 import ProviderCard from '@/components/user/ProviderCard';
 import { servicesApi } from '@/lib/api';
 
-/* ── Nepal city coordinates ── */
-const NEPAL_CITIES = [
-  { name: 'Kathmandu', latitude: 27.7172, longitude: 85.324 },
-  { name: 'Lalitpur', latitude: 27.6588, longitude: 85.3247 },
-  { name: 'Bhaktapur', latitude: 27.672, longitude: 85.4298 },
-  { name: 'Pokhara', latitude: 28.2096, longitude: 83.9856 },
-  { name: 'Biratnagar', latitude: 26.4525, longitude: 87.2718 },
-  { name: 'Birgunj', latitude: 27.0104, longitude: 84.8779 },
-  { name: 'Dharan', latitude: 26.8122, longitude: 87.2833 },
-  { name: 'Butwal', latitude: 27.7006, longitude: 83.4483 },
-  { name: 'Hetauda', latitude: 27.4287, longitude: 85.032 },
-  { name: 'Janakpur', latitude: 26.7288, longitude: 85.9263 },
-  { name: 'Bharatpur', latitude: 27.6833, longitude: 84.4333 },
-  { name: 'Dhangadhi', latitude: 28.6967, longitude: 80.5986 },
-];
+/* ── City type for dynamic provider cities ── */
+type CityInfo = { name: string; latitude: number | null; longitude: number | null; count?: number };
 
 type LocationState =
   | { type: 'none' }
-  | { type: 'city'; name: string; latitude: number; longitude: number }
+  | { type: 'city'; name: string; latitude?: number | null; longitude?: number | null }
   | { type: 'gps'; latitude: number; longitude: number };
 
 export default function CategoryProviders() {
@@ -48,6 +35,14 @@ export default function CategoryProviders() {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dynamicCities, setDynamicCities] = useState<CityInfo[]>([]);
+
+  // Fetch provider cities
+  useEffect(() => {
+    servicesApi.getProviderCities().then(({ data }) => {
+      setDynamicCities(data.cities || []);
+    }).catch(() => {});
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -81,14 +76,20 @@ export default function CategoryProviders() {
 
       let res;
       if (hasCoords) {
-        const coords = location as { latitude: number; longitude: number };
-        res = await servicesApi.nearby({
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          radius_km: 50,
-          category_id: categoryId,
-          limit: 50,
-        });
+        const coords = location as { latitude?: number | null; longitude?: number | null };
+        if (coords.latitude != null && coords.longitude != null) {
+          res = await servicesApi.nearby({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            radius_km: 50,
+            category_id: categoryId,
+            limit: 50,
+          });
+        } else {
+          // City without coordinates — search by city name
+          const cityName = location.type === 'city' ? (location as any).name : undefined;
+          res = await servicesApi.search({ city: cityName, category_id: categoryId, limit: 50 });
+        }
       } else {
         res = await servicesApi.list({ category_id: categoryId });
       }
@@ -154,7 +155,7 @@ export default function CategoryProviders() {
     );
   };
 
-  const handleCitySelect = (city: typeof NEPAL_CITIES[0]) => {
+  const handleCitySelect = (city: CityInfo) => {
     setLocation({ type: 'city', name: city.name, latitude: city.latitude, longitude: city.longitude });
     setLocationOpen(false);
   };
@@ -273,10 +274,13 @@ export default function CategoryProviders() {
                 <p style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600, padding: '4px 14px', margin: 0 }}>{gpsError}</p>
               )}
               <div style={{ padding: '8px 14px 6px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Cities
+                Provider Locations
               </div>
               <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                {NEPAL_CITIES.map((city) => (
+                {dynamicCities.length === 0 && (
+                  <div style={{ padding: '12px 14px', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>No provider locations available</div>
+                )}
+                {dynamicCities.map((city) => (
                   <button
                     key={city.name}
                     onClick={() => handleCitySelect(city)}

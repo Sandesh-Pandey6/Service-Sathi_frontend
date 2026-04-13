@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Camera, Eye, EyeOff, Lock, Pencil, X, Check, Loader2, Bell, Landmark } from 'lucide-react';
+import { Camera, Eye, EyeOff, Lock, Pencil, X, Check, Loader2, Bell, Landmark, Crosshair, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usersApi } from '@/lib/api';
 
@@ -60,6 +60,9 @@ export default function ProviderSettings() {
   const [address, setAddress] = useState(profileData.address || '');
   const [city, setCity] = useState(profileData.city || '');
   const [stateRegion, setStateRegion] = useState(profileData.state || '');
+  const [gpsLatitude, setGpsLatitude] = useState<number | null>(profileData.latitude || null);
+  const [gpsLongitude, setGpsLongitude] = useState<number | null>(profileData.longitude || null);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -89,6 +92,8 @@ export default function ProviderSettings() {
       setAddress(pData.address || '');
       setCity(pData.city || '');
       setStateRegion(pData.state || '');
+      setGpsLatitude(pData.latitude || null);
+      setGpsLongitude(pData.longitude || null);
     }
   }, [user]);
 
@@ -98,7 +103,13 @@ export default function ProviderSettings() {
     try {
       setIsSaving(true);
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      const { data } = await usersApi.updateProfile({ full_name: fullName, phone, address, city, state: stateRegion });
+      const profilePayload: any = { full_name: fullName, phone, address, city, state: stateRegion };
+      // Include GPS coordinates if available
+      if (gpsLatitude !== null && gpsLongitude !== null) {
+        profilePayload.latitude = gpsLatitude;
+        profilePayload.longitude = gpsLongitude;
+      }
+      const { data } = await usersApi.updateProfile(profilePayload);
       updateUser(data.user);
       toast.success('Profile updated successfully!');
       setIsEditing(false);
@@ -146,6 +157,31 @@ export default function ProviderSettings() {
   const firstNameDisplay = displayName.split(' ')[0] || 'Provider';
   const email = user?.email || '';
   const fullLocation = [profileData.address, profileData.city, profileData.state].filter(Boolean).join(', ');
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setGpsLatitude(position.coords.latitude);
+        setGpsLongitude(position.coords.longitude);
+        setGpsLoading(false);
+        toast.success('Location detected successfully!');
+      },
+      (err) => {
+        toast.error(
+          err.code === 1
+            ? 'Permission denied. Please allow location access.'
+            : 'Could not get your location. Try again.'
+        );
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const pageStyle: React.CSSProperties = {
     minHeight: '100%',
@@ -275,6 +311,64 @@ export default function ProviderSettings() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 18px' }}>
               <EditField label="City" value={city} onChange={setCity} />
               <EditField label="State" value={stateRegion} onChange={setStateRegion} />
+            </div>
+
+            {/* GPS Location Button */}
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#00b0b0', marginBottom: '6px' }}>
+                GPS Location
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={handleUseMyLocation}
+                  disabled={gpsLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '10px 18px',
+                    background: gpsLatitude ? '#e0fafa' : '#f8fafb',
+                    border: `1.5px solid ${gpsLatitude ? '#00d4d4' : '#e5e7eb'}`,
+                    borderRadius: '10px',
+                    color: gpsLatitude ? '#00898a' : '#6b7280',
+                    fontWeight: 700, fontSize: '0.85rem',
+                    cursor: gpsLoading ? 'wait' : 'pointer',
+                    transition: 'all 0.2s',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {gpsLoading ? (
+                    <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <Crosshair size={15} />
+                  )}
+                  {gpsLoading ? 'Detecting...' : gpsLatitude ? 'Update My Location' : 'Use My Location'}
+                </button>
+                {gpsLatitude && gpsLongitude && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      fontSize: '0.78rem', fontWeight: 600, color: '#00898a',
+                      background: '#e0fafa', padding: '5px 12px', borderRadius: '8px',
+                    }}>
+                      <MapPin size={13} /> {gpsLatitude.toFixed(4)}, {gpsLongitude.toFixed(4)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setGpsLatitude(null); setGpsLongitude(null); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '24px', height: '24px', borderRadius: '50%',
+                        background: '#fee2e2', border: 'none', cursor: 'pointer',
+                      }}
+                    >
+                      <X size={12} color="#ef4444" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '6px', fontWeight: 500 }}>
+                Your GPS location helps customers find you in nearby searches. If not set, your city's default coordinates will be used.
+              </p>
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button type="button" onClick={() => setIsEditing(false)} style={{

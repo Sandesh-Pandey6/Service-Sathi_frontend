@@ -103,7 +103,7 @@ export const adminApi = {
 // Users
 export const usersApi = {
   getProfile: () => api.get('/users/profile'),
-  updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string; documents?: any }) => api.put('/users/profile', data),
+  updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string; documents?: any; latitude?: number | null; longitude?: number | null }) => api.put('/users/profile', data),
   changePassword: (data: any) => api.put('/users/change-password', data),
   uploadAvatar: async (formData: FormData) => {
     const token = new Cookies().get('accessToken') || localStorage.getItem('accessToken');
@@ -132,6 +132,7 @@ export const servicesApi = {
     api.get('/services/nearby', { params }),
   listCategories: () => api.get('/services/categories'),
   listCategoriesAdmin: () => api.get('/services/categories/admin'),
+  getProviderCities: () => api.get('/services/cities'),
   getProviderServices: (providerId: string) => api.get(`/services/provider/${providerId}`),
   create: (data: Record<string, unknown>) => api.post('/services', data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/services/${id}`, data),

@@ -28,25 +28,12 @@ const COLORS = [
   { bg: 'bg-lime-50/50', border: 'border-lime-200/60', text: 'text-lime-500', outer: 'border-lime-200' },
 ];
 
-/* ── Nepal city coordinates for city-based location search ── */
-const NEPAL_CITIES = [
-  { name: 'Kathmandu', latitude: 27.7172, longitude: 85.324 },
-  { name: 'Lalitpur', latitude: 27.6588, longitude: 85.3247 },
-  { name: 'Bhaktapur', latitude: 27.672, longitude: 85.4298 },
-  { name: 'Pokhara', latitude: 28.2096, longitude: 83.9856 },
-  { name: 'Biratnagar', latitude: 26.4525, longitude: 87.2718 },
-  { name: 'Birgunj', latitude: 27.0104, longitude: 84.8779 },
-  { name: 'Dharan', latitude: 26.8122, longitude: 87.2833 },
-  { name: 'Butwal', latitude: 27.7006, longitude: 83.4483 },
-  { name: 'Hetauda', latitude: 27.4287, longitude: 85.032 },
-  { name: 'Janakpur', latitude: 26.7288, longitude: 85.9263 },
-  { name: 'Bharatpur', latitude: 27.6833, longitude: 84.4333 },
-  { name: 'Dhangadhi', latitude: 28.6967, longitude: 80.5986 },
-];
+/* ── City type for dynamic provider cities ── */
+type CityInfo = { name: string; latitude: number | null; longitude: number | null; count?: number };
 
 type LocationState =
   | { type: 'none' }
-  | { type: 'city'; name: string; latitude: number; longitude: number }
+  | { type: 'city'; name: string; latitude?: number | null; longitude?: number | null }
   | { type: 'gps'; latitude: number; longitude: number };
 
 export default function UserServices() {
@@ -57,12 +44,22 @@ export default function UserServices() {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [isSearching, setIsSearching] = useState(false);
 
+  // Dynamic cities from API
+  const [dynamicCities, setDynamicCities] = useState<CityInfo[]>([]);
+
   // Location state
   const [location, setLocation] = useState<LocationState>({ type: 'none' });
   const [locationOpen, setLocationOpen] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch provider cities from API
+  useEffect(() => {
+    servicesApi.getProviderCities().then(({ data }) => {
+      setDynamicCities(data.cities || []);
+    }).catch(() => {});
+  }, []);
 
   // Parse URL params on mount (from HomePage navigation)
   useEffect(() => {
@@ -72,12 +69,15 @@ export default function UserServices() {
     if (lat && lng) {
       setLocation({ type: 'gps', latitude: parseFloat(lat), longitude: parseFloat(lng) });
     } else if (city) {
-      const found = NEPAL_CITIES.find(c => c.name.toLowerCase() === city.toLowerCase());
+      const found = dynamicCities.find(c => c.name.toLowerCase() === city.toLowerCase());
       if (found) {
         setLocation({ type: 'city', name: found.name, latitude: found.latitude, longitude: found.longitude });
+      } else {
+        // City not in dynamic list yet, still set it by name
+        setLocation({ type: 'city', name: city });
       }
     }
-  }, []);
+  }, [dynamicCities]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -114,14 +114,20 @@ export default function UserServices() {
       const hasCoords = location.type === 'gps' || location.type === 'city';
 
       if (hasCoords) {
-        const coords = location as { latitude: number; longitude: number };
-        provPromise = servicesApi.nearby({
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          radius_km: 50,
-          q: searchTerm || undefined,
-          limit: 20,
-        });
+        const coords = location as { latitude?: number | null; longitude?: number | null };
+        if (coords.latitude != null && coords.longitude != null) {
+          provPromise = servicesApi.nearby({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            radius_km: 50,
+            q: searchTerm || undefined,
+            limit: 20,
+          });
+        } else {
+          // City without coordinates — search by city name
+          const cityName = location.type === 'city' ? (location as any).name : undefined;
+          provPromise = servicesApi.search({ q: searchTerm || undefined, city: cityName, limit: 20 });
+        }
       } else if (searchTerm) {
         provPromise = servicesApi.search({ q: searchTerm, limit: 20 });
       } else {
@@ -168,7 +174,7 @@ export default function UserServices() {
     );
   };
 
-  const handleCitySelect = (city: typeof NEPAL_CITIES[0]) => {
+  const handleCitySelect = (city: CityInfo) => {
     setLocation({ type: 'city', name: city.name, latitude: city.latitude, longitude: city.longitude });
     setLocationOpen(false);
   };
@@ -346,12 +352,15 @@ export default function UserServices() {
 
               {/* Divider + cities label */}
               <div style={{ padding: '8px 14px 6px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Popular Cities
+                Provider Locations
               </div>
 
               {/* City list */}
               <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {NEPAL_CITIES.map((city) => (
+                {dynamicCities.length === 0 && (
+                  <div style={{ padding: '12px 14px', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>No provider locations available</div>
+                )}
+                {dynamicCities.map((city) => (
                   <button
                     key={city.name}
                     onClick={() => handleCitySelect(city)}
