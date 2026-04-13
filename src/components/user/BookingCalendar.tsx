@@ -4,12 +4,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface BookingCalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
+  availableDates?: Date[];
+  allowAllDates?: boolean;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-export default function BookingCalendar({ selectedDate, onDateSelect }: BookingCalendarProps) {
+export default function BookingCalendar({ selectedDate, onDateSelect, availableDates, allowAllDates = false }: BookingCalendarProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -37,6 +39,18 @@ export default function BookingCalendar({ selectedDate, onDateSelect }: BookingC
   const isPast = (day: number) => {
     const date = new Date(viewYear, viewMonth, day);
     return date < today;
+  };
+
+  const isAvailable = (day: number) => {
+    if (allowAllDates) return true;
+    if (!availableDates || availableDates.length === 0) return false; // Strictly block if no availability exists
+    const dateQuery = new Date(viewYear, viewMonth, day);
+    dateQuery.setHours(0, 0, 0, 0);
+    return availableDates.some(avail => {
+      const ad = new Date(avail);
+      ad.setHours(0, 0, 0, 0);
+      return ad.getTime() === dateQuery.getTime();
+    });
   };
 
   const isToday = (day: number) => {
@@ -90,18 +104,20 @@ export default function BookingCalendar({ selectedDate, onDateSelect }: BookingC
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1;
           const past = isPast(day);
+          const available = isAvailable(day);
+          const disabled = past || (!available && availableDates !== undefined);
           const selected = isSelected(day);
           const todayMark = isToday(day);
 
           return (
             <button
               key={day}
-              disabled={past}
+              disabled={disabled}
               onClick={() => onDateSelect(new Date(viewYear, viewMonth, day))}
               className={`
                 w-full aspect-square rounded-xl flex items-center justify-center text-[14px] font-bold transition-all relative overflow-hidden
-                ${past ? 'text-slate-300 cursor-not-allowed' : 'cursor-pointer'}
-                ${!past && !selected ? 'hover:bg-red-50 hover:text-red-700 text-slate-700' : ''}
+                ${disabled ? 'text-slate-300 cursor-not-allowed bg-slate-50/50' : 'cursor-pointer'}
+                ${!disabled && !selected ? 'hover:bg-red-50 hover:text-red-700 text-slate-700' : ''}
                 ${selected ? 'bg-red-600 text-white shadow-lg shadow-red-200 scale-105 z-10' : ''}
               `}
             >

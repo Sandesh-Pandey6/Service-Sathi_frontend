@@ -103,7 +103,7 @@ export const adminApi = {
 // Users
 export const usersApi = {
   getProfile: () => api.get('/users/profile'),
-  updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string; documents?: any; latitude?: number | null; longitude?: number | null }) => api.put('/users/profile', data),
+  updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string; bio?: string; documents?: any; latitude?: number | null; longitude?: number | null }) => api.put('/users/profile', data),
   changePassword: (data: any) => api.put('/users/change-password', data),
   uploadAvatar: async (formData: FormData) => {
     const token = new Cookies().get('accessToken') || localStorage.getItem('accessToken');
@@ -156,6 +156,7 @@ export const providerApi = {
   getServices: (providerId: string) => api.get(`/services/provider/${providerId}`),
   getBookings: (params?: Record<string, unknown>) => api.get('/bookings/provider', { params }),
   getAvailability: (providerId: string) => api.get(`/services/providers/${providerId}/availability`),
+  getPublicAvailability: (providerId: string) => api.get(`/services/providers/${providerId}/availability/public`),
   createAvailability: (providerId: string, data: Record<string, unknown>) => api.post(`/services/providers/${providerId}/availability`, data),
   updateAvailability: (id: string, data: Record<string, unknown>) => api.put(`/services/availability/${id}`, data),
   deleteAvailability: (id: string) => api.delete(`/services/availability/${id}`),

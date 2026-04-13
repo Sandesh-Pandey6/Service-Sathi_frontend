@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Star, MapPin, ChevronLeft, CalendarDays, Loader2, MessageSquare } from 'lucide-react';
-import { usersApi, servicesApi, chatApi } from '@/lib/api';
+import { usersApi, servicesApi, chatApi, providerApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import BookingCalendar from '@/components/user/BookingCalendar';
 import TimeSlots from '@/components/user/TimeSlots';
@@ -18,6 +18,10 @@ export default function ProviderDetailPage() {
   const [showBooking, setShowBooking] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+
+  const [availabilityData, setAvailabilityData] = useState<any[]>([]);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [availableSlotsForDay, setAvailableSlotsForDay] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,6 +45,19 @@ export default function ProviderDetailPage() {
           const revRes = await apiClient.get(`/reviews/provider/${providerId}`);
           setReviews(revRes.data.reviews || []);
         } catch {}
+
+        // Fetch availability
+        try {
+          const availRes = await providerApi.getPublicAvailability(providerId);
+          const availabilities = availRes.data.availabilities || [];
+          setAvailabilityData(availabilities);
+          
+          // Extract unique dates
+          const dates = availabilities.map((a: any) => new Date(a.available_date));
+          setAvailableDates(dates);
+        } catch (err) {
+          console.error('Failed to fetch availability', err);
+        }
       } catch (err) {
         console.error('Failed to fetch provider:', err);
       } finally {
@@ -49,6 +66,36 @@ export default function ProviderDetailPage() {
     };
     fetchData();
   }, [providerId]);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setAvailableSlotsForDay([]);
+      return;
+    }
+    const dateQuery = new Date(selectedDate);
+    dateQuery.setHours(0,0,0,0);
+    
+    // Find matching availabilities
+    const slots = availabilityData
+      .filter((a: any) => {
+         const ad = new Date(a.available_date);
+         ad.setHours(0,0,0,0);
+         return ad.getTime() === dateQuery.getTime();
+      })
+      .map((a: any) => {
+         // Convert HH:MM to 12-hour AM/PM format
+         const [hh, mm] = a.start_time.split(':');
+         let hour = parseInt(hh, 10);
+         const ampm = hour >= 12 ? 'PM' : 'AM';
+         hour = hour % 12;
+         if (hour === 0) hour = 12;
+         const strHour = hour.toString().padStart(2, '0');
+         return `${strHour}:${mm} ${ampm}`;
+      });
+      
+    // Sort slots by time correctly (optional if backend already sorts)
+    setAvailableSlotsForDay(slots);
+  }, [selectedDate, availabilityData]);
 
   if (loading) {
     return (
@@ -269,8 +316,8 @@ export default function ProviderDetailPage() {
             <CalendarDays size={18} className="text-red-500" /> Choose Date & Time
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BookingCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
-            <TimeSlots selectedSlot={selectedSlot} onSlotSelect={setSelectedSlot} />
+            <BookingCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} availableDates={availableDates} />
+            <TimeSlots selectedSlot={selectedSlot} onSlotSelect={setSelectedSlot} availableSlots={availableSlotsForDay} />
           </div>
           {selectedDate && selectedSlot && (
             <div className="mt-4 bg-red-50 border border-red-200/50 rounded-2xl px-6 py-4 flex items-center justify-between">

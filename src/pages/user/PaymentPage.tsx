@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Shield, Lock, Loader2 } from 'lucide-react';
-import { usersApi } from '@/lib/api';
+import { usersApi, servicesApi, bookingsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 import CheckoutStepper from '@/components/user/payment/CheckoutStepper';
@@ -22,6 +22,7 @@ export default function PaymentPage() {
   const providerId = searchParams.get('provider') || '';
   const dateStr = searchParams.get('date') || '';
   const slot = searchParams.get('slot') || '';
+  const categoryId = searchParams.get('category') || '';
 
   const [provider, setProvider] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -30,16 +31,25 @@ export default function PaymentPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cashAgreed, setCashAgreed] = useState(false);
 
   useEffect(() => {
     const fetchProvider = async () => {
       if (!providerId) { setLoading(false); return; }
       try {
-        const res = await usersApi.getProvider(providerId);
+        const [res, svcRes] = await Promise.all([
+          usersApi.getProvider(providerId),
+          servicesApi.getProviderServices(providerId).catch(() => ({ data: [] }))
+        ]);
+        
         const p = res.data.provider || res.data;
+        const services = Array.isArray(svcRes.data) ? svcRes.data : (svcRes.data.services || []);
+        const selectedService = services.find((s: any) => s.category_id === categoryId);
+
         // Map to the shape BookingSummaryCard expects
         setProvider({
           id: p.id,
+          serviceId: selectedService?.id,
           initials: (p.user?.full_name || p.business_name || '??').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
           name: p.user?.full_name || p.business_name || 'Provider',
           service: p.skills_summary || 'Service',
@@ -48,7 +58,8 @@ export default function PaymentPage() {
           area: p.address || '',
           rating: p.rating || 0,
           reviews: p.total_reviews || 0,
-          price: p.total_earnings || 1500, // Use a service price if available
+          price: selectedService?.price || p.total_earnings || 1500, // Use real service price
+          serviceTitle: selectedService?.title || 'Home Service', // Use real service title
           available: p.is_available,
           description: p.description || '',
         });
@@ -89,12 +100,46 @@ export default function PaymentPage() {
   };
 
   const handlePaymentConfirm = async () => {
+    if (!provider?.serviceId || !bookingDate || !slot) {
+      toast.error('Booking information is incomplete.');
+      return;
+    }
+    
+    // Convert slot '02:00 PM' to '14:00'
+    const [time, modifier] = slot.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') hours = '00';
+    if (modifier === 'PM') hours = (parseInt(hours, 10) + 12).toString();
+    const scheduled_time = `${hours.padStart(2, '0')}:${minutes}`;
+
     setIsProcessing(true);
-    // TODO: Call createBookingApi + updateBookingPaymentApi here
-    await new Promise((r) => setTimeout(r, 2000));
-    setIsProcessing(false);
-    toast.success('Booking confirmed!');
-    navigate('/user/bookings');
+    try {
+      // 1. Create Booking
+      const bookingPayload = {
+        service_id: provider.serviceId,
+        scheduled_date: bookingDate.toISOString(),
+        scheduled_time,
+        address: `${provider.area || ''}, ${provider.location || ''}`.trim().replace(/^,|,$/g, ''),
+        subtotal: provider.price,
+        tax_amount: 0,
+        discount_amount: 0,
+      };
+      const res = await bookingsApi.create(bookingPayload);
+      const newBookingId = res.data.booking.id;
+
+      // 2. Update Payment Method / Status
+      await bookingsApi.updatePayment(newBookingId, {
+        payment_method: selectedMethod?.toUpperCase() || 'CASH',
+        payment_status: selectedMethod === 'cash' ? 'PENDING' : 'PAID', // In real system, wait for eSewa/Khalti webhook
+      });
+
+      toast.success('Booking confirmed!');
+      navigate('/user/bookings');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to complete booking');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -127,7 +172,7 @@ export default function PaymentPage() {
       <div className="max-w-[480px] mx-auto w-full">
         {step === 1 && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} showPromo={true} />
+            <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} serviceDetailMessage={provider.serviceTitle} showPromo={true} />
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
               <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-5">Choose Payment Method</h3>
               <div className="flex flex-col gap-3">
@@ -159,40 +204,115 @@ export default function PaymentPage() {
 
         {step === 2 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} showPromo={false} />
+            <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} serviceDetailMessage={provider.serviceTitle} showPromo={false} />
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-[#5c2d91] text-white flex items-center justify-center font-extrabold text-[14px]">K</div>
-                <div>
-                  <h3 className="text-[14px] font-bold text-slate-900 leading-none">Khalti</h3>
-                  <p className="text-[12px] font-medium text-slate-400 mt-1">Pay instantly via Khalti wallet</p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">Registered Mobile Number</label>
-                  <div className="flex bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition-all">
-                    <span className="flex items-center justify-center px-4 bg-slate-50 border-r border-slate-200 text-[14px] font-medium text-slate-600">+977</span>
-                    <input type="text" className="flex-1 w-full p-3 font-medium text-slate-800 text-[14px] outline-none" placeholder="98XXXXXXXX" />
+              {/* Khalti Details */}
+              {selectedMethod === 'khalti' && (
+                <>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 rounded-lg bg-[#5c2d91] text-white flex items-center justify-center font-extrabold text-[14px]">K</div>
+                    <div>
+                      <h3 className="text-[14px] font-bold text-slate-900 leading-none">Khalti</h3>
+                      <p className="text-[12px] font-medium text-slate-400 mt-1">Pay instantly via Khalti wallet</p>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">Khalti MPIN</label>
-                  <input type="password" maxLength={4} className="w-full bg-white rounded-xl border border-slate-200 p-3 font-medium text-slate-800 text-[20px] tracking-widest outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all" placeholder="****" />
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-5">
-                <Shield size={16} className="text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-[12.5px] font-medium text-blue-700 leading-snug">An OTP will be sent to your registered mobile number to confirm this payment.</p>
-              </div>
-              <button onClick={handleNextStep} className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white font-bold text-[14px] py-3.5 rounded-xl transition-all">Continue to Confirm →</button>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">Registered Mobile Number</label>
+                      <div className="flex bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition-all">
+                        <span className="flex items-center justify-center px-4 bg-slate-50 border-r border-slate-200 text-[14px] font-medium text-slate-600">+977</span>
+                        <input type="text" className="flex-1 w-full p-3 font-medium text-slate-800 text-[14px] outline-none" placeholder="98XXXXXXXX" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">Khalti MPIN</label>
+                      <input type="password" maxLength={4} className="w-full bg-white rounded-xl border border-slate-200 p-3 font-medium text-slate-800 text-[20px] tracking-widest outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all" placeholder="****" />
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-5">
+                    <Shield size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                    <p className="text-[12.5px] font-medium text-blue-700 leading-snug">An OTP will be sent to your registered mobile number to confirm this payment.</p>
+                  </div>
+                </>
+              )}
+
+              {/* eSewa Details */}
+              {selectedMethod === 'esewa' && (
+                <>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 rounded-lg bg-[#60bb46] text-white flex items-center justify-center font-extrabold text-[14px]">eS</div>
+                    <div>
+                      <h3 className="text-[14px] font-bold text-slate-900 leading-none">eSewa</h3>
+                      <p className="text-[12px] font-medium text-slate-400 mt-1">Pay instantly via eSewa wallet</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">eSewa ID</label>
+                      <input type="text" className="w-full bg-white rounded-xl border border-slate-200 p-3 font-medium text-slate-800 text-[14px] outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all" placeholder="Enter eSewa ID" />
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-5">
+                    <Shield size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                    <p className="text-[12.5px] font-medium text-blue-700 leading-snug">You will be redirected to eSewa to securely complete your payment.</p>
+                  </div>
+                </>
+              )}
+
+              {/* Cash Details */}
+              {selectedMethod === 'cash' && (
+                <>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-extrabold text-[14px]">$</div>
+                    <div>
+                      <h3 className="text-[14px] font-bold text-slate-900 leading-none">Cash on Service</h3>
+                      <p className="text-[12px] font-medium text-slate-400 mt-1">Pay the provider directly after the job</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#fffdf5] border border-amber-200/60 p-5 rounded-xl mb-5 space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">1</div>
+                      <p className="text-[13px] text-amber-800 font-medium">Pay the provider directly after the service is complete</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">2</div>
+                      <p className="text-[13px] text-amber-800 font-medium">Agree on the amount before work begins</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">3</div>
+                      <p className="text-[13px] text-amber-800 font-medium">Always get a receipt or payment acknowledgement</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">4</div>
+                      <p className="text-[13px] text-amber-800 font-medium">ServiceSathi platform fee of Rs. {platformFee} applies separately</p>
+                    </div>
+                  </div>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500" 
+                      checked={cashAgreed}
+                      onChange={(e) => setCashAgreed(e.target.checked)}
+                    />
+                    <span className="text-[13px] font-medium text-slate-600">I understand and agree to pay the provider in cash after the service</span>
+                  </label>
+                </>
+              )}
+
+              <button 
+                onClick={handleNextStep} 
+                disabled={selectedMethod === 'cash' && !cashAgreed}
+                className="w-full mt-6 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[14px] py-3.5 rounded-xl transition-all"
+              >
+                Continue to Confirm →
+              </button>
             </div>
           </div>
         )}
 
         {step === 3 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} showPromo={false} />
+            <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} serviceDetailMessage={provider.serviceTitle} showPromo={false} />
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
               <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-5">Confirm Payment</h3>
               <div className="space-y-4 border-b border-slate-100 pb-5 mb-5">

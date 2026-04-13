@@ -9,7 +9,8 @@ import {
   Settings,
   LogOut,
   EyeOff,
-  Wrench
+  Wrench,
+  CalendarDays
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,6 +24,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Overview', icon: LayoutDashboard, path: '/provider/dashboard' },
   { label: 'Bookings', icon: CalendarCheck, path: '/provider/bookings', badge: 2 },
+  { label: 'Availability', icon: CalendarDays, path: '/provider/availability' },
   { label: 'Earnings', icon: DollarSign, path: '/provider/earnings' },
   { label: 'Reviews', icon: Star, path: '/provider/reviews' },
   { label: 'Chat', icon: MessageSquare, path: '/provider/messages', badge: 3 },
