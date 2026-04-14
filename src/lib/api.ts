@@ -147,6 +147,7 @@ export const bookingsApi = {
   getProviderBookings: (params?: Record<string, unknown>) => api.get('/bookings/provider', { params }),
   getById: (id: string) => api.get(`/bookings/${id}`),
   updateStatus: (id: string, data: { status: string }) => api.put(`/bookings/${id}/status`, data),
+  updatePayment: (id: string, data: { payment_method?: string; payment_status?: string; transaction_id?: string }) => api.put(`/bookings/${id}/payment`, data),
 };
 
 // Provider Specific

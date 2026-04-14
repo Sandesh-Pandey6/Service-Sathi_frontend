@@ -70,7 +70,7 @@ export default function ProviderAvailability() {
         
         if (pId) {
           const res = await providerApi.getAvailability(pId);
-          const avails = res.data.availability || res.data || [];
+          const avails = res.data.availabilities || res.data.availability || [];
           
           const newSchedule = { ...schedule };
           // Disable all first to re-hydrate from DB accurately
@@ -163,7 +163,7 @@ export default function ProviderAvailability() {
     try {
       // 1. Fetch current backend recurring records
       const res = await providerApi.getAvailability(providerId);
-      const avails = res.data.availability || res.data || [];
+      const avails = res.data.availabilities || res.data.availability || [];
       
       // 2. Delete existing recurring
       for (const a of avails) {
@@ -404,31 +404,6 @@ export default function ProviderAvailability() {
             </div>
           </div>
 
-          {/* Breaks Card Placeholder */}
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500">
-                  <div className="w-4 h-5 border-2 border-current rounded-sm flex items-center justify-center">
-                    <div className="w-2 h-0.5 bg-current -mt-2"></div>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-[16px] font-extrabold text-slate-800 leading-tight">Breaks</h3>
-                  <p className="text-[13px] text-slate-400 font-medium">Time off within working hours</p>
-                </div>
-              </div>
-              <button disabled className="flex items-center gap-1.5 text-[13px] font-bold text-orange-500 opacity-60">
-                <Plus size={16} strokeWidth={3} /> Add break
-              </button>
-            </div>
-            
-            <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-slate-100">
-              <p className="text-[13px] font-medium text-slate-400">
-                No breaks added — you'll work straight through
-              </p>
-            </div>
-          </div>
 
           {/* Weekly Overview */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">

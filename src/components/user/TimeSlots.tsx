@@ -31,12 +31,12 @@ function SlotGroup({ label, icon: Icon, slots, selectedSlot, onSlotSelect }: {
               className={`
                 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13.5px] font-bold transition-all relative overflow-hidden
                 ${selected
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-200 scale-105 z-10 border border-red-600'
-                    : 'bg-white text-slate-700 border border-slate-200 hover:border-red-300 hover:bg-red-50 hover:text-red-700 cursor-pointer'
+                    ? 'bg-[#5f48fb] text-white shadow-lg shadow-indigo-200/50 scale-105 z-10 border border-[#5f48fb]'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-[#5f48fb] cursor-pointer'
                 }
               `}
             >
-              <Clock size={13} strokeWidth={selected ? 3 : 2} className={selected ? 'text-red-200' : 'text-slate-400'} />
+              <Clock size={13} strokeWidth={selected ? 3 : 2} className={selected ? 'text-indigo-200' : 'text-slate-400'} />
               {slot}
             </button>
           );

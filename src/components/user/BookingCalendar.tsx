@@ -117,13 +117,13 @@ export default function BookingCalendar({ selectedDate, onDateSelect, availableD
               className={`
                 w-full aspect-square rounded-xl flex items-center justify-center text-[14px] font-bold transition-all relative overflow-hidden
                 ${disabled ? 'text-slate-300 cursor-not-allowed bg-slate-50/50' : 'cursor-pointer'}
-                ${!disabled && !selected ? 'hover:bg-red-50 hover:text-red-700 text-slate-700' : ''}
-                ${selected ? 'bg-red-600 text-white shadow-lg shadow-red-200 scale-105 z-10' : ''}
+                ${!disabled && !selected ? 'hover:bg-indigo-50 hover:text-[#5f48fb] text-slate-700' : ''}
+                ${selected ? 'bg-[#5f48fb] text-white shadow-lg shadow-indigo-200/50 scale-105 z-10' : ''}
               `}
             >
               {day}
               {todayMark && !selected && (
-                <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-red-500" />
+                <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#5f48fb]" />
               )}
             </button>
           );

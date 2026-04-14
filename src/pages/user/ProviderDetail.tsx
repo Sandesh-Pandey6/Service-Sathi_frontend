@@ -83,18 +83,28 @@ export default function ProviderDetailPage() {
          return ad.getTime() === dateQuery.getTime();
       })
       .map((a: any) => {
-         // Convert HH:MM to 12-hour AM/PM format
-         const [hh, mm] = a.start_time.split(':');
-         let hour = parseInt(hh, 10);
-         const ampm = hour >= 12 ? 'PM' : 'AM';
-         hour = hour % 12;
-         if (hour === 0) hour = 12;
-         const strHour = hour.toString().padStart(2, '0');
-         return `${strHour}:${mm} ${ampm}`;
+         // Format Start Time
+         const [shh, smm] = a.start_time.split(':');
+         let sh = parseInt(shh, 10);
+         const sampm = sh >= 12 ? 'PM' : 'AM';
+         sh = sh % 12 || 12;
+         return `${sh.toString().padStart(2, '0')}:${smm} ${sampm}`;
       });
       
+    // Deduplicate the array to prevent overlapping schedules causing double buttons
+    const uniqueSlots = Array.from(new Set<string>(slots));
+      
     // Sort slots by time correctly (optional if backend already sorts)
-    setAvailableSlotsForDay(slots);
+    setAvailableSlotsForDay(uniqueSlots.sort((a: string, b: string) => {
+      const parseTime = (t: string) => {
+        const [time, ampm] = t.split(' ');
+        let [h, m] = time.split(':').map(Number);
+        if (ampm === 'PM' && h !== 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return h * 60 + m;
+      };
+      return parseTime(a) - parseTime(b);
+    }));
   }, [selectedDate, availabilityData]);
 
   if (loading) {
@@ -313,21 +323,21 @@ export default function ProviderDetailPage() {
       {showBooking && (
         <div className="mb-5">
           <h2 className="text-[17px] font-extrabold text-slate-900 mb-4 flex items-center gap-2">
-            <CalendarDays size={18} className="text-red-500" /> Choose Date & Time
+            <CalendarDays size={18} className="text-[#5f48fb]" /> Choose Date & Time
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <BookingCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} availableDates={availableDates} />
             <TimeSlots selectedSlot={selectedSlot} onSlotSelect={setSelectedSlot} availableSlots={availableSlotsForDay} />
           </div>
           {selectedDate && selectedSlot && (
-            <div className="mt-4 bg-red-50 border border-red-200/50 rounded-2xl px-6 py-4 flex items-center justify-between">
+            <div className="mt-4 bg-indigo-50 border border-indigo-200/50 rounded-2xl px-6 py-4 flex items-center justify-between">
               <div>
                 <p className="text-[13px] text-slate-500 font-medium">Selected</p>
                 <p className="text-[15px] font-bold text-slate-900">
                   {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} · {selectedSlot}
                 </p>
               </div>
-              <button onClick={handleConfirmBooking} className="bg-red-500 hover:bg-red-600 text-white font-bold text-[14px] px-6 py-3 rounded-xl shadow-lg shadow-red-200 transition-all flex items-center gap-2">
+              <button onClick={handleConfirmBooking} className="bg-[#5f48fb] hover:bg-[#4d38e0] text-white font-bold text-[14px] px-6 py-3 rounded-xl shadow-lg shadow-indigo-200/50 transition-all flex items-center gap-2">
                 <CalendarDays size={16} /> Confirm Booking
               </button>
             </div>
@@ -336,7 +346,7 @@ export default function ProviderDetailPage() {
       )}
 
       {!showBooking && (
-        <button onClick={() => setShowBooking(true)} className="w-full bg-red-500 hover:bg-red-600 text-white font-bold text-[15px] py-4 rounded-xl shadow-lg shadow-red-200 transition-all flex items-center justify-center gap-2">
+        <button onClick={() => setShowBooking(true)} className="w-full bg-[#5f48fb] hover:bg-[#4d38e0] text-white font-bold text-[15px] py-4 rounded-xl shadow-lg shadow-indigo-200/50 transition-all flex items-center justify-center gap-2">
           <CalendarDays size={18} /> Book Now — Choose Date & Time
         </button>
       )}

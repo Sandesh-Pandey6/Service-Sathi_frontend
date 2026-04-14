@@ -7,12 +7,10 @@ import toast from 'react-hot-toast';
 import CheckoutStepper from '@/components/user/payment/CheckoutStepper';
 import BookingSummaryCard from '@/components/user/payment/BookingSummaryCard';
 
-type PaymentMethod = 'khalti' | 'esewa' | 'bank' | 'cash';
+type PaymentMethod = 'khalti' | 'bank';
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; sub: string; logoPrefix: string }[] = [
   { id: 'khalti', label: 'Khalti', sub: 'Pay instantly via Khalti wallet', logoPrefix: 'K' },
-  { id: 'esewa', label: 'eSewa', sub: 'Pay instantly via eSewa wallet', logoPrefix: 'eS' },
-  { id: 'cash', label: 'Cash on Service', sub: 'Pay the provider directly after the job', logoPrefix: '$' },
 ];
 
 export default function PaymentPage() {
@@ -31,7 +29,6 @@ export default function PaymentPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cashAgreed, setCashAgreed] = useState(false);
 
   useEffect(() => {
     const fetchProvider = async () => {
@@ -129,8 +126,8 @@ export default function PaymentPage() {
 
       // 2. Update Payment Method / Status
       await bookingsApi.updatePayment(newBookingId, {
-        payment_method: selectedMethod?.toUpperCase() || 'CASH',
-        payment_status: selectedMethod === 'cash' ? 'PENDING' : 'PAID', // In real system, wait for eSewa/Khalti webhook
+        payment_method: selectedMethod?.toUpperCase() || 'KHALTI',
+        payment_status: 'PAID', // In real system, wait for eSewa/Khalti webhook
       });
 
       toast.success('Booking confirmed!');
@@ -181,7 +178,7 @@ export default function PaymentPage() {
                   return (
                     <button key={method.id} onClick={() => setSelectedMethod(method.id)}
                       className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${isSelected ? 'border-red-500 bg-red-50/20' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-[15px] flex-shrink-0 ${method.id === 'khalti' ? 'bg-[#5c2d91] text-white' : method.id === 'esewa' ? 'bg-[#60bb46] text-white' : 'bg-amber-500 text-white'}`}>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-[15px] flex-shrink-0 ${method.id === 'khalti' ? 'bg-[#5c2d91] text-white' : 'bg-blue-500 text-white'}`}>
                         {method.logoPrefix}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -236,72 +233,8 @@ export default function PaymentPage() {
                 </>
               )}
 
-              {/* eSewa Details */}
-              {selectedMethod === 'esewa' && (
-                <>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-lg bg-[#60bb46] text-white flex items-center justify-center font-extrabold text-[14px]">eS</div>
-                    <div>
-                      <h3 className="text-[14px] font-bold text-slate-900 leading-none">eSewa</h3>
-                      <p className="text-[12px] font-medium text-slate-400 mt-1">Pay instantly via eSewa wallet</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">eSewa ID</label>
-                      <input type="text" className="w-full bg-white rounded-xl border border-slate-200 p-3 font-medium text-slate-800 text-[14px] outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all" placeholder="Enter eSewa ID" />
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-5">
-                    <Shield size={16} className="text-blue-500 shrink-0 mt-0.5" />
-                    <p className="text-[12.5px] font-medium text-blue-700 leading-snug">You will be redirected to eSewa to securely complete your payment.</p>
-                  </div>
-                </>
-              )}
-
-              {/* Cash Details */}
-              {selectedMethod === 'cash' && (
-                <>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-extrabold text-[14px]">$</div>
-                    <div>
-                      <h3 className="text-[14px] font-bold text-slate-900 leading-none">Cash on Service</h3>
-                      <p className="text-[12px] font-medium text-slate-400 mt-1">Pay the provider directly after the job</p>
-                    </div>
-                  </div>
-                  <div className="bg-[#fffdf5] border border-amber-200/60 p-5 rounded-xl mb-5 space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">1</div>
-                      <p className="text-[13px] text-amber-800 font-medium">Pay the provider directly after the service is complete</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">2</div>
-                      <p className="text-[13px] text-amber-800 font-medium">Agree on the amount before work begins</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">3</div>
-                      <p className="text-[13px] text-amber-800 font-medium">Always get a receipt or payment acknowledgement</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">4</div>
-                      <p className="text-[13px] text-amber-800 font-medium">ServiceSathi platform fee of Rs. {platformFee} applies separately</p>
-                    </div>
-                  </div>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500" 
-                      checked={cashAgreed}
-                      onChange={(e) => setCashAgreed(e.target.checked)}
-                    />
-                    <span className="text-[13px] font-medium text-slate-600">I understand and agree to pay the provider in cash after the service</span>
-                  </label>
-                </>
-              )}
-
               <button 
                 onClick={handleNextStep} 
-                disabled={selectedMethod === 'cash' && !cashAgreed}
                 className="w-full mt-6 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[14px] py-3.5 rounded-xl transition-all"
               >
                 Continue to Confirm →
