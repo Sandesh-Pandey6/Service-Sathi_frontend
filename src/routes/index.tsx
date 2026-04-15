@@ -17,6 +17,7 @@ import UserBookings from '@/pages/user/UserBookings';
 import CategoryProviders from '@/pages/user/CategoryProviders';
 import ProviderDetailPage from '@/pages/user/ProviderDetail';
 import PaymentPage from '@/pages/user/PaymentPage';
+import KhaltiCallbackPage from '@/pages/user/KhaltiCallbackPage';
 
 import AdminLayout from '@/components/layout/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -79,6 +80,7 @@ export const routes = [
       { path: 'bookings', element: <UserBookings /> },
       { path: 'bookings/new', element: <NewBooking /> },
       { path: 'booking/payment', element: <PaymentPage /> },
+      { path: 'booking/payment/verify', element: <KhaltiCallbackPage /> },
       { path: 'favourites', element: <div className="p-8"><h1 className="text-xl font-bold text-slate-900 mb-2">My Favourites</h1><p className="text-slate-500 text-sm">Your favourite service providers will appear here.</p></div> },
       { path: 'messages', element: <UserMessages /> },
       { path: 'profile', element: <ProfileSettings /> },

@@ -244,7 +244,7 @@ export default function HomePage() {
                     <p className="text-[13px] text-slate-500 mb-2 font-medium">{pro.role}</p>
                     <div className="flex items-center gap-1 text-[13px] font-bold">
                       <Star size={14} className="fill-amber-400 text-amber-400" />
-                      <span className="text-slate-900">{pro.rating}</span>
+                      <span className="text-slate-900">{Number(pro.rating).toFixed(1)}</span>
                       <span className="text-slate-400 font-medium">({pro.reviews} reviews)</span>
                     </div>
                   </div>

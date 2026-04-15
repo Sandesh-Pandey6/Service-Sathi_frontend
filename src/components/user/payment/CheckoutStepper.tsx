@@ -7,8 +7,7 @@ interface CheckoutStepperProps {
 export default function CheckoutStepper({ currentStep }: CheckoutStepperProps) {
   const steps = [
     { num: 1, label: 'Select Method' },
-    { num: 2, label: 'Enter Details' },
-    { num: 3, label: 'Confirm' },
+    { num: 2, label: 'Confirm & Pay' },
   ];
 
   return (

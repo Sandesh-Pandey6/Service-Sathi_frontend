@@ -148,6 +148,8 @@ export const bookingsApi = {
   getById: (id: string) => api.get(`/bookings/${id}`),
   updateStatus: (id: string, data: { status: string }) => api.put(`/bookings/${id}/status`, data),
   updatePayment: (id: string, data: { payment_method?: string; payment_status?: string; transaction_id?: string }) => api.put(`/bookings/${id}/payment`, data),
+  initiateKhalti: (id: string) => api.post(`/bookings/${id}/khalti/initiate`),
+  verifyKhalti: (id: string, data: { pidx: string }) => api.post(`/bookings/${id}/khalti/verify`, data),
 };
 
 // Provider Specific

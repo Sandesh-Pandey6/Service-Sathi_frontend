@@ -77,8 +77,14 @@ export default function ProviderEarnings() {
                   <td className="py-4 text-[13px] font-medium text-slate-500">{new Date(item.completed_at || item.scheduled_date).toLocaleDateString()}</td>
                   <td className="py-4 text-[13px] font-extrabold text-[#00b341]">Rs. {item.total_amount?.toLocaleString()}</td>
                   <td className="py-4">
-                    <span className="px-3.5 py-1.5 rounded-full text-[12px] font-bold bg-[#e5faed] text-[#00b341]">
-                      {item.payment?.payment_status || 'Completed'}
+                    <span className={`px-3.5 py-1.5 rounded-full text-[12px] font-bold ${
+                      (!item.payment?.payment_status || item.payment?.payment_status === 'PAID') 
+                        ? 'bg-[#e5faed] text-[#00b341]' 
+                        : item.payment?.payment_status === 'PENDING'
+                          ? 'bg-amber-50 text-amber-600'
+                          : 'bg-red-50 text-red-600'
+                    }`}>
+                      {item.payment?.payment_status || 'PAID'}
                     </span>
                   </td>
                 </tr>

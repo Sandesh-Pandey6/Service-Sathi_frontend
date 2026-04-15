@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import CheckoutStepper from '@/components/user/payment/CheckoutStepper';
 import BookingSummaryCard from '@/components/user/payment/BookingSummaryCard';
 
-type PaymentMethod = 'khalti' | 'bank';
+type PaymentMethod = 'khalti';
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; sub: string; logoPrefix: string }[] = [
   { id: 'khalti', label: 'Khalti', sub: 'Pay instantly via Khalti wallet', logoPrefix: 'K' },
@@ -26,7 +26,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const bookingDate = dateStr ? new Date(dateStr) : null;
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -93,10 +93,10 @@ export default function PaymentPage() {
 
   const handleNextStep = () => {
     if (step === 1 && !selectedMethod) return toast.error('Please select a payment method');
-    setStep((prev) => (prev + 1) as 1 | 2 | 3);
+    setStep(2);
   };
 
-  const handlePaymentConfirm = async () => {
+  const handlePayWithKhalti = async () => {
     if (!provider?.serviceId || !bookingDate || !slot) {
       toast.error('Booking information is incomplete.');
       return;
@@ -124,17 +124,20 @@ export default function PaymentPage() {
       const res = await bookingsApi.create(bookingPayload);
       const newBookingId = res.data.booking.id;
 
-      // 2. Update Payment Method / Status
-      await bookingsApi.updatePayment(newBookingId, {
-        payment_method: selectedMethod?.toUpperCase() || 'KHALTI',
-        payment_status: 'PAID', // In real system, wait for eSewa/Khalti webhook
-      });
+      // 2. Initiate Khalti Payment — get payment_url
+      const khaltiRes = await bookingsApi.initiateKhalti(newBookingId);
+      const paymentUrl = khaltiRes.data.payment_url;
 
-      toast.success('Booking confirmed!');
-      navigate('/user/bookings');
+      if (!paymentUrl) {
+        throw new Error('Failed to get Khalti payment URL');
+      }
+
+      // 3. Redirect to Khalti checkout page
+      // Store bookingId in sessionStorage so callback page can use it
+      sessionStorage.setItem('khalti_booking_id', newBookingId);
+      window.location.href = paymentUrl;
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to complete booking');
-    } finally {
+      toast.error(err.response?.data?.error || 'Failed to initiate payment');
       setIsProcessing(false);
     }
   };
@@ -145,7 +148,7 @@ export default function PaymentPage() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => {
-              if (step > 1) setStep((prev) => (prev - 1) as 1 | 2 | 3);
+              if (step > 1) setStep(1);
               else navigate(-1);
             }}
             className="mt-1 w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
@@ -177,23 +180,23 @@ export default function PaymentPage() {
                   const isSelected = selectedMethod === method.id;
                   return (
                     <button key={method.id} onClick={() => setSelectedMethod(method.id)}
-                      className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${isSelected ? 'border-red-500 bg-red-50/20' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-[15px] flex-shrink-0 ${method.id === 'khalti' ? 'bg-[#5c2d91] text-white' : 'bg-blue-500 text-white'}`}>
+                      className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${isSelected ? 'border-[#5c2d91] bg-purple-50/30' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-[15px] flex-shrink-0 bg-[#5c2d91] text-white">
                         {method.logoPrefix}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-[14px] font-bold ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>{method.label}</p>
                         <p className="text-[12px] font-medium text-slate-400 truncate">{method.sub}</p>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-red-500' : 'border-slate-300'}`}>
-                        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#5c2d91]' : 'border-slate-300'}`}>
+                        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-[#5c2d91]" />}
                       </div>
                     </button>
                   );
                 })}
               </div>
-              <button onClick={handleNextStep} disabled={!selectedMethod} className="w-full mt-6 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-bold text-[14px] py-3.5 rounded-xl transition-all">
-                Continue to Payment Details →
+              <button onClick={handleNextStep} disabled={!selectedMethod} className="w-full mt-6 bg-[#5c2d91] hover:bg-[#4a2275] disabled:bg-slate-300 text-white font-bold text-[14px] py-3.5 rounded-xl transition-all">
+                Continue to Confirm →
               </button>
             </div>
           </div>
@@ -203,63 +206,28 @@ export default function PaymentPage() {
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
             <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} serviceDetailMessage={provider.serviceTitle} showPromo={false} />
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              {/* Khalti Details */}
-              {selectedMethod === 'khalti' && (
-                <>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-lg bg-[#5c2d91] text-white flex items-center justify-center font-extrabold text-[14px]">K</div>
-                    <div>
-                      <h3 className="text-[14px] font-bold text-slate-900 leading-none">Khalti</h3>
-                      <p className="text-[12px] font-medium text-slate-400 mt-1">Pay instantly via Khalti wallet</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">Registered Mobile Number</label>
-                      <div className="flex bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition-all">
-                        <span className="flex items-center justify-center px-4 bg-slate-50 border-r border-slate-200 text-[14px] font-medium text-slate-600">+977</span>
-                        <input type="text" className="flex-1 w-full p-3 font-medium text-slate-800 text-[14px] outline-none" placeholder="98XXXXXXXX" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-600 mb-1.5 block">Khalti MPIN</label>
-                      <input type="password" maxLength={4} className="w-full bg-white rounded-xl border border-slate-200 p-3 font-medium text-slate-800 text-[20px] tracking-widest outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all" placeholder="****" />
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-5">
-                    <Shield size={16} className="text-blue-500 shrink-0 mt-0.5" />
-                    <p className="text-[12.5px] font-medium text-blue-700 leading-snug">An OTP will be sent to your registered mobile number to confirm this payment.</p>
-                  </div>
-                </>
-              )}
-
-              <button 
-                onClick={handleNextStep} 
-                className="w-full mt-6 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[14px] py-3.5 rounded-xl transition-all"
-              >
-                Continue to Confirm →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <BookingSummaryCard provider={provider} bookingDate={bookingDate} slot={slot} serviceDetailMessage={provider.serviceTitle} showPromo={false} />
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-5">Confirm Payment</h3>
+              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-5">Confirm & Pay</h3>
               <div className="space-y-4 border-b border-slate-100 pb-5 mb-5">
-                <div className="flex justify-between items-center text-[13px]"><span className="text-slate-500 font-medium">Payment Method</span><span className="font-bold text-slate-900">{PAYMENT_METHODS.find(m => m.id === selectedMethod)?.label || 'Khalti'}</span></div>
-                <div className="flex justify-between items-center text-[13px]"><span className="text-slate-500 font-medium">Amount</span><span className="font-bold text-slate-900">Rs. {total.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center text-[13px]"><span className="text-slate-500 font-medium">Payment Method</span><span className="font-bold text-[#5c2d91]">Khalti</span></div>
+                <div className="flex justify-between items-center text-[13px]"><span className="text-slate-500 font-medium">Service Fee</span><span className="font-bold text-slate-900">Rs. {serviceFee.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center text-[13px]"><span className="text-slate-500 font-medium">Platform Fee (5%)</span><span className="font-bold text-slate-900">Rs. {platformFee.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center text-[14px] pt-2 border-t border-slate-100"><span className="text-slate-700 font-bold">Total</span><span className="font-extrabold text-slate-900">Rs. {total.toLocaleString()}</span></div>
                 <div className="flex justify-between items-center text-[13px]"><span className="text-slate-500 font-medium">Provider</span><span className="font-bold text-slate-900">{provider.name}</span></div>
                 <div className="flex justify-between items-center text-[13px]"><span className="text-slate-500 font-medium">Date & Time</span><span className="font-bold text-slate-900">{bookingDate?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, {slot}</span></div>
               </div>
+
+              <div className="flex items-start gap-2.5 bg-purple-50/50 border border-purple-100 p-4 rounded-xl mb-5">
+                <Shield size={16} className="text-[#5c2d91] shrink-0 mt-0.5" />
+                <p className="text-[12.5px] font-medium text-purple-800 leading-snug">You will be securely redirected to Khalti to complete your payment. After payment, you'll be brought back automatically.</p>
+              </div>
+
               <div className="flex items-center gap-2.5 bg-emerald-50/50 border border-emerald-100 p-3.5 rounded-xl mb-5">
                 <Lock size={16} className="text-emerald-500 shrink-0" />
-                <p className="text-[12px] font-medium text-emerald-700">Your payment is protected by ServiceSathi's secure payment gateway. 256-bit SSL encrypted.</p>
+                <p className="text-[12px] font-medium text-emerald-700">Your payment is protected by Khalti's secure payment gateway. 256-bit SSL encrypted.</p>
               </div>
-              <button onClick={handlePaymentConfirm} disabled={isProcessing} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-[15px] py-4 rounded-xl shadow-lg shadow-red-200 transition-all flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
-                {isProcessing ? (<><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</>) : (<><Shield size={18} /> Pay Rs. {total.toLocaleString()}</>)}
+
+              <button onClick={handlePayWithKhalti} disabled={isProcessing} className="w-full bg-[#5c2d91] hover:bg-[#4a2275] text-white font-bold text-[15px] py-4 rounded-xl shadow-lg shadow-purple-200 transition-all flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                {isProcessing ? (<><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting to Khalti...</>) : (<><Shield size={18} /> Pay Rs. {total.toLocaleString()} with Khalti</>)}
               </button>
               <p className="text-center text-[11px] font-medium text-slate-400 mt-4">By proceeding, you agree to ServiceSathi's <a href="#" className="underline hover:text-slate-600">Terms of Service</a></p>
             </div>

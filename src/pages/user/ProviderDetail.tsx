@@ -178,7 +178,7 @@ export default function ProviderDetailPage() {
                 {[1, 2, 3, 4, 5].map(s => (
                   <Star key={s} size={14} fill={s <= Math.round(rating) ? '#facc15' : '#e2e8f0'} color={s <= Math.round(rating) ? '#facc15' : '#e2e8f0'} />
                 ))}
-                <span className="text-[13px] font-bold text-slate-900 ml-1">{rating}</span>
+                <span className="text-[13px] font-bold text-slate-900 ml-1">{Number(rating).toFixed(1)}</span>
                 <span className="text-[12px] text-slate-400 font-medium">({totalReviews} reviews)</span>
               </div>
               {isAvailable && (
