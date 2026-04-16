@@ -128,7 +128,7 @@ export default function ProviderDetailPage() {
   const providerName = pUser.full_name || provider.business_name || 'Provider';
   const initials = providerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
   const isVerified = provider.is_verified;
-  const rating = provider.rating || 0;
+  const rating = Number(provider.rating || 0).toFixed(1);
   const totalReviews = provider.total_reviews || 0;
   const isAvailable = provider.is_available;
 

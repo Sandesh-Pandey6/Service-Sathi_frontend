@@ -66,7 +66,7 @@ export default function ProviderCard({ provider, category }: ProviderCardProps) 
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
               <Star size={13} fill="#facc15" color="#facc15" />
-              <span className="text-[13px] font-bold text-slate-900">{provider.rating}</span>
+              <span className="text-[13px] font-bold text-slate-900">{Number(provider.rating || 0).toFixed(1)}</span>
               <span className="text-[12px] text-slate-400 font-medium">({provider.reviews})</span>
             </div>
             <div className="flex items-center gap-1 text-[12px] text-slate-400 font-medium">

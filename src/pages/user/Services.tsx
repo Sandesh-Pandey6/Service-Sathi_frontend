@@ -582,7 +582,7 @@ export default function UserServices() {
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Star size={14} fill="#facc15" color="#facc15" />
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{provider.rating || 0}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{Number(provider.rating || 0).toFixed(1)}</span>
                       <span style={{ fontSize: '12px', fontWeight: 500, color: '#94a3b8' }}>({provider.total_reviews || 0} reviews)</span>
                     </div>
                   </div>
