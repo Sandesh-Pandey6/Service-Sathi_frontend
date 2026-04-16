@@ -11,18 +11,42 @@ import { adminApi } from '@/lib/api';
 export default function AdminDashboard() {
   const [dashStats, setDashStats] = useState<any>(null);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [revenueAnalytics, setRevenueAnalytics] = useState<any>(null);
+  const [flaggedReviewsCount, setFlaggedReviewsCount] = useState(0);
+  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
+  const [pendingProviderDocsCount, setPendingProviderDocsCount] = useState(0);
+  const [apiResponseMs, setApiResponseMs] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [statsRes, bookingsRes] = await Promise.all([
+        const startedAt = performance.now();
+        const [statsRes, bookingsRes, revenueRes, reviewsRes, paymentsRes, providersRes] = await Promise.all([
           adminApi.getDashboardStats(),
           adminApi.listBookings({ page: 1, limit: 5 }),
+          adminApi.getRevenueAnalytics(),
+          adminApi.listReviews({ page: 1, limit: 100, status: 'flagged' }),
+          adminApi.listPayments({ page: 1, limit: 100, status: 'PENDING' }),
+          adminApi.listUsers({ page: 1, limit: 100, role: 'PROVIDER' }),
         ]);
+        setApiResponseMs(performance.now() - startedAt);
         setDashStats(statsRes.data);
         setRecentBookings(bookingsRes.data.bookings || []);
+        setRevenueAnalytics(revenueRes.data);
+        setFlaggedReviewsCount(reviewsRes.data.pagination?.total || reviewsRes.data.reviews?.length || 0);
+        setPendingPaymentsCount(paymentsRes.data.pagination?.total || paymentsRes.data.payments?.length || 0);
+
+        const pendingProviderDocs = (providersRes.data.users || []).filter((user: any) => {
+          const documentsVerified = user.provider_profile?.documents_verified || {};
+          const documentStatuses = Object.values(documentsVerified) as Array<{ status?: string }>;
+          if (documentStatuses.length === 0) {
+            return !!user.provider_profile?.documents;
+          }
+          return documentStatuses.some((doc) => doc?.status === 'pending');
+        }).length;
+        setPendingProviderDocsCount(pendingProviderDocs);
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
       } finally {
@@ -32,13 +56,24 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
+  const revenueTotal = dashStats?.revenue?.total || 0;
+  const revenueLast30Days = dashStats?.last_30_days?.revenue || 0;
+  const totalBookings = dashStats?.bookings?.total || 0;
+  const recentBookings30d = dashStats?.last_30_days?.bookings || 0;
+  const totalUsers = dashStats?.users?.total || 0;
+  const totalProviders = dashStats?.users?.providers || 0;
+  const totalCompleted = dashStats?.bookings?.completed || 0;
+  const pendingBookings = dashStats?.bookings?.pending || 0;
+  const revenueChange = revenueLast30Days > 0 ? `+Rs ${revenueLast30Days.toLocaleString()} (30d)` : undefined;
+  const bookingsChange = recentBookings30d > 0 ? `+${recentBookings30d} in 30d` : undefined;
+
   const stats = [
-    { title: 'Total Users', value: dashStats?.users?.total?.toLocaleString() || '0', icon: <Users size={20} strokeWidth={2.5}/>, color: 'blue', change: '+12%', changeType: 'up' as const },
-    { title: 'Active Providers', value: dashStats?.users?.providers?.toLocaleString() || '0', icon: <Wrench size={20} strokeWidth={2.5}/>, color: 'violet', change: '+8%', changeType: 'up' as const },
-    { title: 'Total Bookings', value: dashStats?.bookings?.total?.toLocaleString() || '0', icon: <Calendar size={20} strokeWidth={2.5}/>, color: 'emerald', change: '+23%', changeType: 'up' as const },
-    { title: 'Revenue (NPR)', value: `Rs${((dashStats?.revenue?.total || 0) / 1000).toFixed(1)}K`, icon: <Banknote size={20} strokeWidth={2.5}/>, color: 'orange', change: '+15%', changeType: 'up' as const },
-    { title: 'Pending Bookings', value: dashStats?.bookings?.pending?.toString() || '0', icon: <Star size={20} strokeWidth={2.5}/>, color: 'yellow', change: '', changeType: 'up' as const },
-    { title: 'Completed', value: dashStats?.bookings?.completed?.toString() || '0', icon: <HelpCircle size={20} strokeWidth={2.5}/>, color: 'red', change: '', changeType: 'up' as const },
+    { title: 'Total Users', value: totalUsers.toLocaleString(), icon: <Users size={20} strokeWidth={2.5}/>, color: 'blue', change: undefined, changeType: 'up' as const },
+    { title: 'Active Providers', value: totalProviders.toLocaleString(), icon: <Wrench size={20} strokeWidth={2.5}/>, color: 'violet', change: undefined, changeType: 'up' as const },
+    { title: 'Total Bookings', value: totalBookings.toLocaleString(), icon: <Calendar size={20} strokeWidth={2.5}/>, color: 'emerald', change: bookingsChange, changeType: 'up' as const },
+    { title: 'Revenue (NPR)', value: `Rs ${revenueTotal.toLocaleString()}`, icon: <Banknote size={20} strokeWidth={2.5}/>, color: 'orange', change: revenueChange, changeType: 'up' as const },
+    { title: 'Pending Bookings', value: pendingBookings.toString(), icon: <Star size={20} strokeWidth={2.5}/>, color: 'yellow', change: undefined, changeType: 'up' as const },
+    { title: 'Completed', value: totalCompleted.toString(), icon: <HelpCircle size={20} strokeWidth={2.5}/>, color: 'red', change: undefined, changeType: 'up' as const },
   ];
 
   return (
@@ -72,11 +107,26 @@ export default function AdminDashboard() {
       {/* Charts & Actions Section */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
         <div className="xl:col-span-3">
-          <RevenueChartPlaceholder />
+          <RevenueChartPlaceholder
+            data={revenueAnalytics?.by_month}
+            totalRevenue={revenueAnalytics?.total_revenue || 0}
+            totalTransactions={revenueAnalytics?.total_transactions || 0}
+            loading={loading}
+          />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 lg:gap-6">
-          <QuickActions />
-          <PlatformHealth />
+          <QuickActions
+            pendingProviderDocs={pendingProviderDocsCount}
+            flaggedReviews={flaggedReviewsCount}
+            pendingPayments={pendingPaymentsCount}
+            openTickets={0}
+          />
+          <PlatformHealth
+            apiResponseMs={apiResponseMs}
+            paidPayments={revenueAnalytics?.total_transactions || 0}
+            failedPayments={0}
+            totalUsers={totalUsers}
+          />
         </div>
       </div>
 

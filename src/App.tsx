@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { useRoutes } from 'react-router-dom';
-import { routes } from './routes';
+import AppRoutes from './routes';
 import { useAppSelector } from './hooks/useAppSelector';
 import { useAuth } from './hooks/useAuth';
 import { authApi } from './lib/api';
@@ -24,5 +23,5 @@ export default function App() {
     }
   }, [accessToken, user, updateUser]);
 
-  return useRoutes(routes);
+  return <AppRoutes />;
 }

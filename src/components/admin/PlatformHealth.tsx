@@ -1,13 +1,41 @@
 import React from 'react';
 
-const stats = [
-  { label: 'API Response', value: '98ms', colorText: 'text-emerald-500' },
-  { label: 'Uptime', value: '99.9%', colorText: 'text-emerald-500' },
-  { label: 'Failed Payments', value: '1.2%', colorText: 'text-rose-500' },
-  { label: 'Active Sessions', value: '2,341', colorText: 'text-emerald-500' },
-];
+interface PlatformHealthProps {
+  apiResponseMs?: number;
+  paidPayments?: number;
+  failedPayments?: number;
+  totalUsers?: number;
+}
 
-export const PlatformHealth: React.FC = () => {
+export const PlatformHealth: React.FC<PlatformHealthProps> = ({
+  apiResponseMs = 0,
+  paidPayments = 0,
+  failedPayments = 0,
+  totalUsers = 0,
+}) => {
+  const totalProcessedPayments = paidPayments + failedPayments;
+  const failedPaymentRate =
+    totalProcessedPayments > 0 ? `${((failedPayments / totalProcessedPayments) * 100).toFixed(1)}%` : '0.0%';
+
+  const stats = [
+    {
+      label: 'API Response',
+      value: apiResponseMs > 0 ? `${Math.round(apiResponseMs)}ms` : 'N/A',
+      colorText: apiResponseMs > 500 ? 'text-amber-500' : 'text-emerald-500',
+    },
+    { label: 'System Uptime', value: 'Live', colorText: 'text-emerald-500' },
+    {
+      label: 'Failed Payments',
+      value: failedPaymentRate,
+      colorText: failedPayments > 0 ? 'text-rose-500' : 'text-emerald-500',
+    },
+    {
+      label: 'Registered Users',
+      value: totalUsers.toLocaleString(),
+      colorText: 'text-emerald-500',
+    },
+  ];
+
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
       <h3 className="font-bold text-slate-800 text-[15px] mb-5">Platform Health</h3>

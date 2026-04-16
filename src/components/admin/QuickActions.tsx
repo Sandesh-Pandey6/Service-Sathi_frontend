@@ -1,34 +1,46 @@
 import React from 'react';
 import { UserCheck, AlertTriangle, CreditCard, MessageSquare } from 'lucide-react';
 
-const actions = [
-  {
-    icon: <UserCheck size={16} className="text-emerald-500" />,
-    iconBg: 'bg-emerald-50',
-    title: 'Verify Provider Docs',
-    count: 4,
-  },
-  {
-    icon: <AlertTriangle size={16} className="text-amber-500" />,
-    iconBg: 'bg-amber-50',
-    title: 'Review Flagged Content',
-    count: 2,
-  },
-  {
-    icon: <CreditCard size={16} className="text-purple-500" />,
-    iconBg: 'bg-purple-50',
-    title: 'Process Refunds',
-    count: 1,
-  },
-  {
-    icon: <MessageSquare size={16} className="text-blue-500" />,
-    iconBg: 'bg-blue-50',
-    title: 'Reply to Tickets',
-    count: 7,
-  },
-];
+interface QuickActionsProps {
+  pendingProviderDocs?: number;
+  flaggedReviews?: number;
+  pendingPayments?: number;
+  openTickets?: number;
+}
 
-export const QuickActions: React.FC = () => {
+export const QuickActions: React.FC<QuickActionsProps> = ({
+  pendingProviderDocs = 0,
+  flaggedReviews = 0,
+  pendingPayments = 0,
+  openTickets = 0,
+}) => {
+  const actions = [
+    {
+      icon: <UserCheck size={16} className="text-emerald-500" />,
+      iconBg: 'bg-emerald-50',
+      title: 'Verify Provider Docs',
+      count: pendingProviderDocs,
+    },
+    {
+      icon: <AlertTriangle size={16} className="text-amber-500" />,
+      iconBg: 'bg-amber-50',
+      title: 'Review Flagged Content',
+      count: flaggedReviews,
+    },
+    {
+      icon: <CreditCard size={16} className="text-purple-500" />,
+      iconBg: 'bg-purple-50',
+      title: 'Pending Payments',
+      count: pendingPayments,
+    },
+    {
+      icon: <MessageSquare size={16} className="text-blue-500" />,
+      iconBg: 'bg-blue-50',
+      title: 'Open Tickets',
+      count: openTickets,
+    },
+  ];
+
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
       <h3 className="font-bold text-slate-800 text-[15px] mb-5">Quick Actions</h3>

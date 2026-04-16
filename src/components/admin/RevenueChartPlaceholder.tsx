@@ -1,44 +1,86 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export const RevenueChartPlaceholder: React.FC = () => {
+interface RevenuePoint {
+  period: string;
+  revenue: number;
+  count?: number;
+}
+
+interface RevenueChartProps {
+  data?: RevenuePoint[];
+  totalRevenue?: number;
+  totalTransactions?: number;
+  loading?: boolean;
+}
+
+export const RevenueChartPlaceholder: React.FC<RevenueChartProps> = ({
+  data = [],
+  totalRevenue = 0,
+  totalTransactions = 0,
+  loading = false,
+}) => {
+  const chartData = data.length > 0 ? data.slice(-7) : [];
+  const maxRevenue = Math.max(...chartData.map((item) => item.revenue), 1);
+  const averagePerPoint = chartData.length > 0 ? totalRevenue / chartData.length : 0;
+
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 h-[340px] flex flex-col justify-between">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-slate-800 text-[15px]">Revenue Overview</h3>
-          <p className="text-xs text-slate-400 mt-1">Last 7 days</p>
+          <p className="text-xs text-slate-400 mt-1">Live revenue from paid transactions</p>
         </div>
-        <button className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors">
-          Last 7 days <ChevronDown size={14} />
+        <button className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+          Recent periods <ChevronDown size={14} />
         </button>
       </div>
 
       <div className="flex-1 mt-6 flex flex-col justify-end relative pb-8">
-        {/* Placeholder graph context */}
-        <div className="flex justify-between w-full absolute bottom-12 px-8 text-[11px] font-bold text-slate-300">
-          <span>M</span>
-          <span>T</span>
-          <span>W</span>
-          <span>T</span>
-          <span>F</span>
-          <span>S</span>
-          <span>S</span>
-        </div>
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-sm font-medium text-slate-400">
+            No paid revenue data yet.
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 flex items-end gap-3 sm:gap-4">
+              {chartData.map((item) => {
+                const height = Math.max((item.revenue / maxRevenue) * 160, 12);
+                const label = item.period.includes('-') ? item.period.slice(5) : item.period;
 
-        {/* Dashboard numbers below */}
+                return (
+                  <div key={item.period} className="flex-1 flex flex-col items-center justify-end gap-3">
+                    <div className="text-[10px] font-semibold text-slate-400">
+                      Rs {item.revenue.toLocaleString()}
+                    </div>
+                    <div
+                      className="w-full max-w-[42px] rounded-t-xl bg-gradient-to-t from-red-500 to-red-300"
+                      style={{ height }}
+                    />
+                    <div className="text-[11px] font-bold text-slate-300">{label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         <div className="flex justify-between items-end border-t border-slate-50 pt-4">
           <div>
             <p className="text-[11px] font-semibold text-slate-400 uppercase">Total Revenue</p>
-            <p className="font-bold text-slate-800 text-sm mt-0.5">Rs4.2L</p>
+            <p className="font-bold text-slate-800 text-sm mt-0.5">Rs {totalRevenue.toLocaleString()}</p>
           </div>
           <div>
             <p className="text-[11px] font-semibold text-slate-400 uppercase">Avg/Day</p>
-            <p className="font-bold text-slate-800 text-sm mt-0.5">Rs60K</p>
+            <p className="font-bold text-slate-800 text-sm mt-0.5">Rs {Math.round(averagePerPoint).toLocaleString()}</p>
           </div>
           <div className="text-right">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase">Growth</p>
-            <p className="font-bold text-emerald-500 text-sm mt-0.5">+15%</p>
+            <p className="text-[11px] font-semibold text-slate-400 uppercase">Transactions</p>
+            <p className="font-bold text-emerald-500 text-sm mt-0.5">{totalTransactions.toLocaleString()}</p>
           </div>
         </div>
       </div>
