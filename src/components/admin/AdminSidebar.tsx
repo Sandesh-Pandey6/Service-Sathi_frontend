@@ -18,6 +18,7 @@ import {
   LogOut,
   Bell,
   HelpCircle,
+  Flag,
   X
 } from 'lucide-react';
 
@@ -52,6 +53,7 @@ const navGroups: NavGroup[] = [
       { label: 'Payments & Revenue', icon: CreditCard, path: '/admin/payments' },
       { label: 'Reviews & Ratings', icon: Star, path: '/admin/reviews' },
       { label: 'Reports & Analytics', icon: BarChart3, path: '/admin/reports' },
+      { label: 'Provider Reports', icon: Flag, path: '/admin/provider-reports' },
     ]
   },
   {

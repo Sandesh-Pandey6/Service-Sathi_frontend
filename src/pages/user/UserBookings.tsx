@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Clock, MapPin, Star, X, Plus, CheckCircle2,
-  XCircle, AlertCircle, Phone, Mail, Calendar,
+  XCircle, AlertCircle, AlertTriangle, Phone, Mail, Calendar,
   CreditCard, Info, FileText, Loader2, Send
 } from 'lucide-react';
 import { bookingsApi } from '@/lib/api';
 import { createReviewApi } from '@/api/reviews.api';
+import ReportProviderModal from '@/components/report/ReportProviderModal';
 import toast from 'react-hot-toast';
 
 type BookingStatus = 'CONFIRMED' | 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'IN_PROGRESS' | 'REJECTED';
@@ -255,7 +256,7 @@ function ReviewModal({ booking, onClose, onSuccess }: { booking: any; onClose: (
   );
 }
 
-function BookingCard({ booking, onShowDetails, onRate }: { booking: any; onShowDetails: () => void; onRate: () => void }) {
+function BookingCard({ booking, onShowDetails, onRate, onReport }: { booking: any; onShowDetails: () => void; onRate: () => void; onReport: () => void }) {
   const badge = getStatusBadge(booking.status as BookingStatus);
   const BadgeIcon = badge.icon;
   const pName = booking.provider?.user?.full_name || 'Provider';
@@ -308,24 +309,29 @@ function BookingCard({ booking, onShowDetails, onRate }: { booking: any; onShowD
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #f8fafc' }}>
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {booking.status === 'COMPLETED' && !booking.review && (
             <button onClick={onRate} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px solid #fecaca', color: '#dc2626', padding: '10px 18px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
               Rate this booking
             </button>
           )}
           {booking.review && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fefce8', padding: '6px 10px', borderRadius: '8px', border: '1px solid #fef08a' }}>
-                <Star size={14} fill="#facc15" color="#facc15" />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#854d0e' }}>{booking.review.rating}.0 Rated</span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fefce8', padding: '6px 10px', borderRadius: '8px', border: '1px solid #fef08a' }}>
+              <Star size={14} fill="#facc15" color="#facc15" />
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#854d0e' }}>{booking.review.rating}.0 Rated</span>
             </div>
           )}
         </div>
-        <button onClick={onShowDetails} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#0f172a', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
-          View Details
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {booking.status === 'COMPLETED' && (
+            <button onClick={onReport} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 16px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s' }}>
+              <AlertTriangle size={14} /> Report
+            </button>
+          )}
+          <button onClick={onShowDetails} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#0f172a', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
+            View Details
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -335,6 +341,7 @@ export default function UserBookings() {
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming');
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [ratingBooking, setRatingBooking] = useState<any | null>(null);
+  const [reportingBooking, setReportingBooking] = useState<any | null>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -406,6 +413,7 @@ export default function UserBookings() {
               booking={booking} 
               onShowDetails={() => setSelectedBooking(booking)} 
               onRate={() => setRatingBooking(booking)}
+              onReport={() => setReportingBooking(booking)}
             />
           ))
         )}
@@ -421,6 +429,13 @@ export default function UserBookings() {
             // Quick local state update to avoid fetching again just for this
             setBookings(prev => prev.map(b => b.id === ratingBooking.id ? { ...b, review: { rating: 5 } } : b));
           }} 
+        />
+      )}
+      {reportingBooking && (
+        <ReportProviderModal
+          booking={reportingBooking}
+          onClose={() => setReportingBooking(null)}
+          onSuccess={() => setReportingBooking(null)}
         />
       )}
     </div>
