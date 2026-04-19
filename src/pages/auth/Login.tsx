@@ -7,10 +7,10 @@ import AdminLogin from './AdminLogin';
  * Login router — reads ?role= query param and renders the
  * appropriate role-specific login page.
  *
- * /login               → Customer login (default)
- * /login?role=CUSTOMER → Customer login
- * /login?role=PROVIDER → Provider login
- * /login?role=ADMIN    → Admin login
+ * /login               = login (default)
+ * /login?role=CUSTOMER = Customer login
+ * /login?role=PROVIDER =Provider login
+ * /login?role=ADMIN    = Admin login
  */
 export default function Login() {
   const [searchParams] = useSearchParams();

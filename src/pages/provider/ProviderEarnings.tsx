@@ -14,7 +14,10 @@ export default function ProviderEarnings() {
           providerApi.getBookings({ limit: 10, status: 'COMPLETED' }).catch(() => ({ data: { bookings: [] } })),
         ]);
         setEarnings(earningsRes.data);
-        setPayments(bookingsRes.data.bookings || []);
+        const paidBookings = (bookingsRes.data.bookings || []).filter(
+          (booking: any) => booking.payment?.payment_status === 'PAID'
+        );
+        setPayments(paidBookings);
       } catch (err) {
         console.error('Failed to load earnings:', err);
       } finally {

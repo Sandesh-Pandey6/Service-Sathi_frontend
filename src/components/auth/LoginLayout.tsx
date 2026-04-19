@@ -35,9 +35,7 @@ export default function LoginLayout({
       >
         {/* Brand */}
         <div className="flex items-center gap-2.5 z-10">
-          <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <Wrench size={18} className="text-white" />
-          </div>
+          <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-9 h-9 rounded-xl object-contain" />
           <span className="text-xl font-extrabold tracking-tight">
             Service<span className="text-yellow-300">Sathi</span>
           </span>
@@ -68,12 +66,7 @@ export default function LoginLayout({
       <div className="flex-1 flex flex-col bg-[#fafbfc] min-h-screen">
         {/* Mobile brand (< lg) */}
         <div className="lg:hidden flex items-center gap-2.5 px-6 pt-6">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: accentColor }}
-          >
-            <Wrench size={16} className="text-white" />
-          </div>
+          <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-8 h-8 rounded-lg object-contain" />
           <span className="text-lg font-extrabold tracking-tight text-slate-900">
             Service<span style={{ color: accentColor }}>Sathi</span>
           </span>

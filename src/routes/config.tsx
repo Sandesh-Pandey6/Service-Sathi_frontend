@@ -20,6 +20,7 @@ import ProviderDetailPage from '@/pages/user/ProviderDetail';
 import PaymentPage from '@/pages/user/PaymentPage';
 import KhaltiCallbackPage from '@/pages/user/KhaltiCallbackPage';
 import UserMessages from '@/pages/user/Messages';
+import { ProtectedRoute } from '@/components/routing/ProtectedRoute';
 
 import AdminLayout from '@/components/layout/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -70,7 +71,11 @@ export const routes = [
   },
   {
     path: '/user',
-    element: <UserLayout />,
+    element: (
+      <ProtectedRoute allowedRoles={['CUSTOMER']}>
+        <UserLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/user/dashboard" replace /> },
       { path: 'dashboard', element: <UserDashboard /> },
@@ -89,7 +94,11 @@ export const routes = [
   },
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN']}>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: 'dashboard', element: <AdminDashboard /> },
@@ -108,7 +117,11 @@ export const routes = [
   },
   {
     path: '/provider',
-    element: <ProviderLayout />,
+    element: (
+      <ProtectedRoute allowedRoles={['PROVIDER']}>
+        <ProviderLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/provider/dashboard" replace /> },
       { path: 'dashboard', element: <ProviderDashboard /> },

@@ -478,9 +478,7 @@ export default function UserServices() {
                 className={`flex flex-col items-start justify-between p-6 rounded-[20px] border ${visual.bg} ${visual.border} hover:shadow-sm transition-all min-h-[140px] group`}
                 style={{ textDecoration: 'none' }}
               >
-                <div className={`w-10 h-10 rounded-full border ${visual.outer} flex items-center justify-center bg-transparent mt-1 ml-1 text-[18px]`}>
-                  {cat.icon || <Wrench size={18} className={visual.text} />}
-                </div>
+
                 <div className="mt-auto ml-1">
                   <h3 className="text-[15px] font-bold text-slate-900 mb-1">{cat.name}</h3>
                   <div className="flex items-center gap-2 text-[12px] font-medium text-slate-500">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { chatApi } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 import { useAuth } from '@/hooks/useAuth';
+import type { Conversation as ConversationType } from '@/types';
 import toast from 'react-hot-toast';
 import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, Loader2 } from 'lucide-react';
 
@@ -33,28 +34,9 @@ const formatSidebarTime = (d: string) => {
 };
 
 /* ── Types ── */
-interface UserInfo {
-  id: string;
-  full_name: string;
-  profile_image: string | null;
-}
-
-interface Conversation {
-  id: string;
-  booking_number: string;
-  service: { id: string; title: string };
-  other_party: UserInfo;
-  last_message: {
-    id: string;
-    message_text: string;
-    sender_name: string;
-    created_at: string;
-    is_read: boolean;
-  } | null;
-  unread_count: number;
-  total_messages: number;
-  updated_at: string;
-}
+// Use the shared Conversation type from @/types/message.ts
+// which clearly documents that other_party is always the OTHER user
+type Conversation = ConversationType;
 
 interface Message {
   id: string;
@@ -378,7 +360,7 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 700, fontSize: '14px', letterSpacing: '0.5px',
                   }}>
-                    {conv.other_party.profile_image ? (
+                    {conv.other_party?.profile_image ? (
                       <img src={conv.other_party.profile_image} alt="" style={{
                         width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
                       }} />
@@ -453,7 +435,7 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontWeight: 700, fontSize: '14px',
                 }}>
-                  {activeConversation.other_party.profile_image ? (
+                  {activeConversation.other_party?.profile_image ? (
                     <img src={activeConversation.other_party.profile_image} alt="" style={{
                       width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
                     }} />

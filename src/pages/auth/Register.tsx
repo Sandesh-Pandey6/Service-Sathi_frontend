@@ -150,11 +150,7 @@ export default function Register() {
       <div className={`hidden lg:flex flex-col col-span-4 p-12 xl:p-16 ${t_bg} text-white relative h-screen overflow-y-auto`}>
         {/* Logo */}
         <div className="mb-24 flex items-center gap-2 font-bold cursor-pointer" onClick={() => navigate('/')}>
-          <div className="bg-white rounded p-1 text-black flex items-center justify-center w-8 h-8">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
-          </div>
+          <img src={role === 'CUSTOMER' ? '/customer-admin-logo.png' : '/provider-logo.png'} alt="Service Sathi" className="w-8 h-8 rounded object-contain" />
           <span className="text-xl tracking-tight">Service<span className="text-[#ffdb4d]">Sathi</span></span>
         </div>
 
@@ -244,11 +240,7 @@ export default function Register() {
         
         {/* Mobile Header (Hidden on Desktop) */}
         <div className="lg:hidden flex items-center p-6 pb-0 gap-2 font-bold cursor-pointer" onClick={() => navigate('/')}>
-          <div className={`${t_bg} rounded p-1 text-white flex items-center justify-center w-7 h-7`}>
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
-          </div>
+          <img src={role === 'CUSTOMER' ? '/customer-admin-logo.png' : '/provider-logo.png'} alt="Service Sathi" className="w-7 h-7 rounded object-contain" />
           <span className="text-lg text-slate-900 tracking-tight">Service<span className={t_text}>Sathi</span></span>
         </div>
 

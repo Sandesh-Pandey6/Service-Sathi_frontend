@@ -65,9 +65,7 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
   <div className="flex items-center justify-between w-full px-6 py-3">
     <div className="flex items-center gap-2 font-bold text-slate-900 cursor-pointer">
-      <div className="bg-red-600 text-white p-1.5 rounded-md">
-        <Wrench size={20} className="transform -rotate-45" />
-      </div>
+      <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-9 h-9 rounded-md object-contain" />
       <span className="text-lg tracking-tight">Service<span className="text-red-600">Sathi</span></span>
     </div>
     <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
@@ -354,9 +352,7 @@ export default function HomePage() {
             {/* Logo Col */}
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 font-bold text-white text-2xl mb-5">
-                <div className="bg-red-600 text-white p-1 rounded-md">
-                  <Wrench size={22} className="fill-current transform -rotate-45" />
-                </div>
+                <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-10 h-10 rounded-md object-contain" />
                 <span className="tracking-tight text-xl">Service<span className="text-red-500">Sathi</span></span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-xs">

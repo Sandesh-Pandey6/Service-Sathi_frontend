@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { authApi } from '@/lib/api';
 import toast from 'react-hot-toast';
-import Cookies from 'universal-cookie';
 
 import { 
   LayoutDashboard, 
@@ -21,8 +20,6 @@ import {
   Flag,
   X
 } from 'lucide-react';
-
-const cookies = new Cookies();
 
 interface NavItem {
   label: string;
@@ -82,8 +79,6 @@ export const AdminSidebar: React.FC<Props> = ({ collapsed, onToggle, onMobileClo
     try {
       await authApi.logout();
     } catch (_) {}
-    cookies.remove('accessToken');
-    cookies.remove('refreshToken');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     toast.success('Logged out');
@@ -107,9 +102,8 @@ export const AdminSidebar: React.FC<Props> = ({ collapsed, onToggle, onMobileClo
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800">
-        <div className="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          <Wrench size={20} className="text-white" />
-        </div>
+        <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-9 h-9 rounded-xl object-contain flex-shrink-0" />
+
         {!isCollapsed && (
           <div>
             <p className="font-bold text-sm text-white">Service Sathi</p>

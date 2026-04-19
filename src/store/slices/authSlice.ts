@@ -6,6 +6,8 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  /** True while the app is bootstrapping the user from /auth/me on refresh */
+  loading: boolean;
 }
 
 const storedToken = localStorage.getItem('accessToken');
@@ -16,6 +18,8 @@ const initialState: AuthState = {
   accessToken: storedToken || null,
   refreshToken: storedRefresh || null,
   isAuthenticated: !!storedToken,
+  // If we have a stored token but no user, we need to bootstrap → start loading
+  loading: !!storedToken,
 };
 
 const authSlice = createSlice({
@@ -31,11 +35,14 @@ const authSlice = createSlice({
       state.accessToken = access_token;
       state.refreshToken = refresh_token ?? state.refreshToken;
       state.isAuthenticated = true;
+      state.loading = false;
       localStorage.setItem('accessToken', access_token);
       if (refresh_token) localStorage.setItem('refreshToken', refresh_token);
     },
     setUser: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
+      // Once we have resolved the user (or confirmed null), stop loading
+      state.loading = false;
     },
     setTokens: (
       state,
@@ -46,16 +53,20 @@ const authSlice = createSlice({
         state.refreshToken = action.payload.refresh_token;
       }
     },
+    setAuthLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
+      state.loading = false;
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
     },
   },
 });
 
-export const { setCredentials, setUser, setTokens, logout } = authSlice.actions;
+export const { setCredentials, setUser, setTokens, setAuthLoading, logout } = authSlice.actions;
 export default authSlice.reducer;

@@ -4,18 +4,15 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import Cookies from 'universal-cookie';
 
 import LoginLayout from '@/components/auth/LoginLayout';
 import LoginForm, { LoginFormValues } from '@/components/auth/LoginForm';
 import { Link } from 'react-router-dom';
 
-const cookies = new Cookies();
-
 export default function CustomerLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login: setAuthState } = useAuth();
+  const { login: setAuthState, logout: clearAuthState } = useAuth();
 
   const {
     register,
@@ -28,14 +25,24 @@ export default function CustomerLogin() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
+
+      // Fully clear any previous session (Redux state + localStorage) to prevent session bleeding
+      clearAuthState();
+
       const response = await authApi.login({
         email: data.email,
         password: data.password,
+        role: 'CUSTOMER',
       });
       const { access_token, refresh_token, user } = response.data;
 
-      cookies.set('accessToken', access_token, { path: '/' });
-      cookies.set('refreshToken', refresh_token, { path: '/' });
+      if (user.role !== 'CUSTOMER') {
+        toast.error('This account is not a customer account. Please use the correct login portal.');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        return;
+      }
+
       localStorage.setItem('accessToken', access_token);
       localStorage.setItem('refreshToken', refresh_token);
 

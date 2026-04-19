@@ -434,9 +434,7 @@ export default function ProviderRegister() {
         {/* Top Pill / Logo Area */}
         <div className="mb-20 flex flex-col items-start cursor-pointer" onClick={() => navigate('/')}>
           <div className="flex items-center gap-2 font-bold mb-8">
-            <div className="bg-white rounded p-1 text-[#3730A3] flex items-center justify-center w-8 h-8">
-              <Hexagon fill="currentColor" stroke="none" className="w-5 h-5"/>
-            </div>
+            <img src="/provider-logo.png" alt="Service Sathi" className="w-8 h-8 rounded object-contain" />
             <span className="text-xl tracking-tight">Service<span className="text-[#ffdb4d]">Sathi</span></span>
           </div>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-white/90 text-xs font-semibold border border-white/20">
@@ -503,9 +501,7 @@ export default function ProviderRegister() {
         
         {/* Mobile Header (Hidden on Desktop) */}
         <div className="lg:hidden flex items-center p-6 pb-0 gap-2 font-bold cursor-pointer" onClick={() => navigate('/')}>
-          <div className="bg-[#3730A3] rounded p-1 text-white flex items-center justify-center w-7 h-7">
-             <Hexagon size={16} fill="currentColor" stroke="none"/>
-          </div>
+          <img src="/provider-logo.png" alt="Service Sathi" className="w-7 h-7 rounded object-contain" />
           <span className="text-lg text-slate-900 tracking-tight">Service<span className="text-[#5b21b6]">Sathi</span></span>
         </div>
 

@@ -1,8 +1,6 @@
 import axios from 'axios';
-import Cookies from 'universal-cookie';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
-const cookies = new Cookies();
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -15,7 +13,7 @@ export const api = axios.create({
 // Request interceptor - attach token
 api.interceptors.request.use(
   (config) => {
-    const token = cookies.get('accessToken') || localStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -28,19 +26,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      const refreshToken = cookies.get('refreshToken') || localStorage.getItem('refreshToken');
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
         try {
           const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refresh_token: refreshToken });
-          const { access_token } = data;
-          cookies.set('accessToken', access_token, { path: '/' });
+          const { access_token, refresh_token } = data;
           localStorage.setItem('accessToken', access_token);
-          error.config.headers.Authorization = `Bearer ${access_token}`;
-          return api.request(error.config);
-        } catch (refreshError) {
-          cookies.remove('accessToken');
-          cookies.remove('refreshToken');
+          if (refresh_token) {
+            localStorage.setItem('refreshToken', refresh_token);
+          }
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          return api.request(originalRequest);
+        } catch (_refreshError) {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }
@@ -56,7 +57,7 @@ export const authApi = {
     api.post('/auth/register', data),
   verifyOtp: (data: { email: string; otp: string }) => api.post('/auth/verify-otp', data),
   resendOtp: (data: { email: string }) => api.post('/auth/resend-otp', data),
-  login: (data: { email: string; password: string }) => api.post('/auth/login', data),
+  login: (data: { email: string; password: string; role?: 'CUSTOMER' | 'PROVIDER' | 'ADMIN' }) => api.post('/auth/login', data),
   logout: (refreshToken?: string) => api.post('/auth/logout', { refresh_token: refreshToken }),
   me: () => api.get('/auth/me'),
 };
@@ -106,7 +107,7 @@ export const usersApi = {
   updateProfile: (data: { full_name?: string; phone?: string; address?: string; city?: string; state?: string; bio?: string; documents?: any; latitude?: number | null; longitude?: number | null }) => api.put('/users/profile', data),
   changePassword: (data: any) => api.put('/users/change-password', data),
   uploadAvatar: async (formData: FormData) => {
-    const token = new Cookies().get('accessToken') || localStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken');
     const res = await fetch(`${BASE_URL}/users/upload-avatar`, {
       method: 'POST',
       headers: {

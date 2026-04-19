@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import Cookies from 'universal-cookie';
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -16,8 +15,6 @@ import {
   Bell,
   Wrench
 } from 'lucide-react';
-
-const cookies = new Cookies();
 
 const ICON_MAP: Record<string, any> = {
   dashboard: LayoutDashboard,
@@ -51,8 +48,6 @@ export default function DashboardLayout({ config }: { config: DashboardConfig })
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    cookies.remove('accessToken');
-    cookies.remove('refreshToken');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     navigate('/login');
@@ -71,9 +66,7 @@ export default function DashboardLayout({ config }: { config: DashboardConfig })
         
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-6 pt-7 pb-6">
-          <div className="bg-red-600 rounded-lg p-1.5 flex items-center justify-center shrink-0">
-            <Wrench size={16} className="text-white" />
-          </div>
+          <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-9 h-9 rounded-lg object-contain shrink-0" />
           <p className="text-[18px] font-extrabold tracking-tight">
             <span className="text-slate-900">Service</span><span className="text-red-600">Sathi</span>
           </p>

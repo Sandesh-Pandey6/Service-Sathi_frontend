@@ -10,11 +10,7 @@ export default function RoleSelection() {
       {/* ── Top Branding Bar ── */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-5 sm:px-8 py-5 sm:py-8">
         <div className="flex items-center gap-2 font-bold text-white text-xl sm:text-2xl">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded bg-white flex items-center justify-center text-[#aa1818]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
-          </div>
+          <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-7 h-7 sm:w-8 sm:h-8 rounded object-contain" />
           <span className="tracking-tight text-lg sm:text-xl">Service<span className="text-[#ffdb4d]">Sathi</span></span>
         </div>
 

@@ -49,9 +49,7 @@ export const ProviderSidebar: React.FC<ProviderSidebarProps> = ({ collapsed = fa
       {/* Brand */}
       <div className="px-6 py-8">
         <Link to="/provider/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
-            <Wrench size={18} />
-          </div>
+          <img src="/provider-logo.png" alt="Service Sathi" className="w-8 h-8 rounded-lg object-contain" />
           <span className="text-[17px] font-bold text-slate-900 tracking-tight">ServiceSathi</span>
         </Link>
         <p className="text-[12px] font-medium text-slate-400 mt-1 ml-10">Provider Portal</p>

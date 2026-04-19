@@ -17,7 +17,7 @@ export type { ServiceCategory, Service } from './service';
 export type { Booking } from './booking';
 export type { Payment } from './payment';
 export type { Review } from './review';
-export type { Message } from './message';
+export type { Message, Conversation, ConversationParty } from './message';
 export type { Notification } from './notification';
 
 // Auth types

@@ -5,16 +5,13 @@ import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { Shield, AlertTriangle, Wrench } from 'lucide-react';
-import Cookies from 'universal-cookie';
 
 import LoginForm, { LoginFormValues } from '@/components/auth/LoginForm';
-
-const cookies = new Cookies();
 
 export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login: setAuthState } = useAuth();
+  const { login: setAuthState, logout: clearAuthState } = useAuth();
 
   const {
     register,
@@ -27,9 +24,14 @@ export default function AdminLogin() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
+
+      // Fully clear any previous session (Redux state + localStorage) to prevent session bleeding
+      clearAuthState();
+
       const response = await authApi.login({
         email: data.email,
         password: data.password,
+        role: 'ADMIN',
       });
       const { access_token, refresh_token, user } = response.data;
 
@@ -38,8 +40,6 @@ export default function AdminLogin() {
         return;
       }
 
-      cookies.set('accessToken', access_token, { path: '/' });
-      cookies.set('refreshToken', refresh_token, { path: '/' });
       localStorage.setItem('accessToken', access_token);
       localStorage.setItem('refreshToken', refresh_token);
 
@@ -67,9 +67,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-[480px]">
         {/* Brand */}
         <div className="flex items-center justify-center gap-2.5 mb-10">
-          <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center">
-            <Wrench size={18} className="text-white" />
-          </div>
+          <img src="/customer-admin-logo.png" alt="Service Sathi" className="w-9 h-9 rounded-xl object-contain" />
           <span className="text-[22px] font-extrabold tracking-tight text-slate-900">
             Service<span className="text-amber-500">Sathi</span>
           </span>

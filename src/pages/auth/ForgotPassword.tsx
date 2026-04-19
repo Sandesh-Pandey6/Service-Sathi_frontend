@@ -153,9 +153,7 @@ export default function ForgotPassword() {
       <div className={`hidden lg:flex w-[420px] xl:w-[460px] flex-shrink-0 flex-col justify-between ${t.panelBg} text-white p-10 xl:p-12 relative overflow-hidden`}>
         {/* Brand */}
         <div className="flex items-center gap-2.5 z-10">
-          <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <Wrench size={18} className="text-white" />
-          </div>
+          <img src={role === 'CUSTOMER' ? '/customer-admin-logo.png' : '/provider-logo.png'} alt="Service Sathi" className="w-9 h-9 rounded-xl object-contain" />
           <span className="text-xl font-extrabold tracking-tight">
             Service<span className={role === 'CUSTOMER' ? "text-yellow-300" : "text-indigo-200"}>Sathi</span>
           </span>
@@ -185,9 +183,7 @@ export default function ForgotPassword() {
       <div className="flex-1 flex flex-col bg-[#fafbfc] min-h-screen">
         {/* Mobile brand */}
         <div className="lg:hidden flex items-center gap-2.5 px-6 pt-6">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: t.btnBg }}>
-            <Wrench size={16} className="text-white" />
-          </div>
+          <img src={role === 'CUSTOMER' ? '/customer-admin-logo.png' : '/provider-logo.png'} alt="Service Sathi" className="w-8 h-8 rounded-lg object-contain" />
           <span className="text-lg font-extrabold tracking-tight text-slate-900">
             Service<span style={{ color: t.badgeColor }}>Sathi</span>
           </span>
