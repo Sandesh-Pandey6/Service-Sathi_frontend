@@ -15,7 +15,7 @@ export default function UserSettings() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) return toast.error('Passwords do not match');
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$/;
     if (newPassword.length < 6) return toast.error('Password must be at least 6 characters');
     if (!passwordRegex.test(newPassword)) return toast.error('Password must include uppercase, lowercase, number, and special character');
     try {

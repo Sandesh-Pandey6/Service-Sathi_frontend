@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { SimpleStatCard } from '@/components/admin/SimpleStatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { Filter, Download, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -71,6 +71,17 @@ export default function AdminUsers() {
     }
   };
 
+  const handleVerifyEmail = async (userId: string) => {
+    if (!confirm('Manually verify this user\'s email address?')) return;
+    try {
+      await adminApi.verifyUserEmail(userId);
+      toast.success('Email verified');
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to verify email');
+    }
+  };
+
   const filteredUsers = users.filter(u => {
     if (activeTab === 'All Users') return true;
     if (activeTab === 'Active') return u.is_verified && u.email_verified;
@@ -97,16 +108,6 @@ export default function AdminUsers() {
               {tab}
             </button>
           ))}
-        </div>
-        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white text-slate-600 font-bold text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
-            <Filter size={16} />
-            Filter
-          </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white text-slate-600 font-bold text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
-            <Download size={16} />
-            Export
-          </button>
         </div>
       </div>
 
@@ -167,7 +168,18 @@ export default function AdminUsers() {
                     <span className="text-sm font-medium text-slate-500">{new Date(u.created_at).toLocaleDateString()}</span>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={u.email_verified ? 'completed' : 'pending'} />
+                    {u.email_verified ? (
+                      <StatusBadge status="completed" />
+                    ) : (
+                      <button
+                        onClick={() => handleVerifyEmail(u.id)}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                        title="Click to manually verify this user's email"
+                      >
+                        <StatusBadge status="pending" />
+                        <span className="underline ml-1">Verify</span>
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">

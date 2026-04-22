@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { providerApi, authApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { Zap, Folder, Star, Calendar } from 'lucide-react';
 
 export default function ProviderServices() {
   const [services, setServices] = useState<any[]>([]);
@@ -47,7 +48,7 @@ export default function ProviderServices() {
           {services.map((s, i) => (
             <div key={i} className="bg-white rounded-2xl p-5 shadow-sm flex items-center gap-5">
               <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-2xl">
-                {s.category?.icon || '⚡'}
+                {s.category?.icon || <Zap size={24} className="text-amber-500" />}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -57,9 +58,9 @@ export default function ProviderServices() {
                   </span>
                 </div>
                 <div className="flex gap-4 text-xs text-slate-400">
-                  <span>📂 {s.category?.name || 'Uncategorized'}</span>
-                  <span>⭐ {s.rating || '0.0'}</span>
-                  <span>📅 {s.total_bookings || 0} bookings</span>
+                  <span className="flex items-center gap-1"><Folder size={12} /> {s.category?.name || 'Uncategorized'}</span>
+                  <span className="flex items-center gap-1"><Star size={12} /> {s.rating || '0.0'}</span>
+                  <span className="flex items-center gap-1"><Calendar size={12} /> {s.total_bookings || 0} bookings</span>
                 </div>
               </div>
               <div className="text-right">

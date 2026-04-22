@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   User, Mail, Lock, Eye, EyeOff, ShieldCheck, Loader2, MapPin, 
-  Check, Briefcase, Camera, UploadCloud, Hexagon, X, FileText, CheckCircle2
+  Check, Briefcase, Camera, UploadCloud, X, FileText, CheckCircle2
 } from 'lucide-react';
 import { authApi } from '@/lib/api';
 
@@ -134,7 +134,7 @@ function UploadZone({ label, required, file, uploadedUrl, isUploading, onSelect,
             <p className="text-[13px] font-bold text-slate-800 truncate">{file?.name || 'Uploaded'}</p>
             <p className="text-[11px] text-slate-500">
               {file ? `${(file.size / 1024).toFixed(0)} KB` : ''}
-              {uploadedUrl && !isUploading && <span className="text-emerald-600 font-bold ml-2">✓ Uploaded</span>}
+              {uploadedUrl && !isUploading && <span className="text-emerald-600 font-bold ml-2"><Check size={14} className="inline mr-1" /> Uploaded</span>}
               {isUploading && <span className="text-[#5b21b6] font-bold ml-2">Uploading…</span>}
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function ProviderRegister() {
 
   // OTP Timer
   useEffect(() => {
-    let t: NodeJS.Timeout;
+    let t: ReturnType<typeof setInterval>;
     if (step === 4 && resendTimer > 0) t = setInterval(() => setResendTimer(p => p - 1), 1000);
     return () => clearInterval(t);
   }, [step, resendTimer]);
@@ -424,7 +424,7 @@ export default function ProviderRegister() {
     </div>
   );
 
-  const inputClass = `w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm text-slate-800 transition-shadow transition-colors focus:ring-4 focus:ring-[#5b21b6]/20 focus:border-[#5b21b6]`;
+  const inputClass = `w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm text-slate-800 transition-all focus:ring-4 focus:ring-[#5b21b6]/20 focus:border-[#5b21b6]`;
 
   return (
     <div className="min-h-screen grid lg:grid-cols-12 bg-white font-sans overflow-x-hidden">
@@ -516,7 +516,7 @@ export default function ProviderRegister() {
 
           {step !== 4 && renderStepper()}
 
-          {/* ────── STEP 1: ACCOUNT ────── */}
+          {/* STEP 1: ACCOUNT  */}
           {step === 1 && (
             <div className="w-full animate-in fade-in slide-in-from-right-4 duration-300 max-w-[500px] mx-auto">
               <div className="mb-8">
@@ -578,7 +578,7 @@ export default function ProviderRegister() {
                     {...register('password', { 
                       required: 'Password is required', 
                       minLength: { value: 8, message: 'Minimum 8 characters' },
-                      pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, message: 'Must include uppercase, lowercase, number and special character' }
+                      pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$/, message: 'Must include uppercase, lowercase, number and special character' }
                     })}
                     placeholder="Create a strong password"
                     className={`${inputClass} pr-10 ${errors.password ? 'border-red-300' : ''}`}
@@ -606,7 +606,7 @@ export default function ProviderRegister() {
           )}
 
 
-          {/* ────── STEP 2: PROFESSIONAL INFO ────── */}
+          {/*  STEP 2: PROFESSIONAL INFO */}
           {step === 2 && (
             <div className="w-full animate-in fade-in slide-in-from-right-4 duration-300 max-w-[540px] mx-auto">
               <div className="mb-8">
@@ -677,7 +677,7 @@ export default function ProviderRegister() {
                     onChange={(e) => setBio(e.target.value.substring(0, 300))}
                     placeholder="Tell us a bit about your professional background and why customers should hire you..."
                     rows={4}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none text-sm text-slate-800 transition-shadow transition-colors focus:ring-4 focus:ring-[#5b21b6]/20 focus:border-[#5b21b6] resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none text-sm text-slate-800 transition-all focus:ring-4 focus:ring-[#5b21b6]/20 focus:border-[#5b21b6] resize-none"
                   />
                 </div>
 
@@ -694,7 +694,7 @@ export default function ProviderRegister() {
           )}
 
 
-          {/* ────── STEP 3: DOCUMENTS ────── */}
+          {/* STEP 3: DOCUMENTS  */}
           {step === 3 && (
             <div className="w-full animate-in fade-in slide-in-from-right-4 duration-300 max-w-[540px] mx-auto pb-12">
               <div className="mb-8">

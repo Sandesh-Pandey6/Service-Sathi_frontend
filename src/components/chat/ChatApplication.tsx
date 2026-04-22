@@ -38,6 +38,12 @@ const formatSidebarTime = (d: string) => {
 // which clearly documents that other_party is always the OTHER user
 type Conversation = ConversationType;
 
+interface UserInfo {
+  id: string;
+  full_name: string;
+  profile_image: string | null;
+}
+
 interface Message {
   id: string;
   message_text: string;
@@ -118,6 +124,7 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
           );
         });
         if (msg.sender_id !== user?.id) {
+          chatApi.markAsRead(msg.id).catch(console.error);
           socket.emit('message_read', { message_id: msg.id });
         }
       }
@@ -142,6 +149,12 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Sync total unread count with sidebars instantly
+  useEffect(() => {
+    const totalUnread = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+    window.dispatchEvent(new CustomEvent('chatCountUpdated', { detail: totalUnread }));
+  }, [conversations]);
+
   const fetchConversations = async () => {
     try {
       const res = await chatApi.getConversations();
@@ -161,7 +174,19 @@ export default function ChatApplication({ role, queryBookingId }: ChatApplicatio
       const res = await chatApi.getMessages(bookingId, { page: 1, limit: 100 });
       setMessages(res.data.messages);
       const unread = res.data.messages.filter((m: Message) => !m.is_read && m.sender_id !== user?.id);
-      unread.forEach((m: Message) => socket.emit('message_read', { message_id: m.id }));
+      
+      // Use REST API for reliable persistence, then optionally emit for real-time sync to the other party
+      for (const m of unread) {
+        chatApi.markAsRead(m.id).catch(console.error);
+        socket.emit('message_read', { message_id: m.id });
+      }
+
+      // Update local conversation state to clear the unread badge instantly
+      if (unread.length > 0) {
+        setConversations(prev => prev.map(c => 
+          c.id === bookingId ? { ...c, unread_count: Math.max(0, (c.unread_count || 0) - unread.length) } : c
+        ));
+      }
     } catch {
       toast.error('Failed to load messages');
     }

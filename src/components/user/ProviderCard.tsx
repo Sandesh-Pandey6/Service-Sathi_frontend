@@ -58,6 +58,9 @@ export default function ProviderCard({ provider, category }: ProviderCardProps) 
           </div>
 
           {/* Meta */}
+          <p className="text-[14px] text-red-600 font-bold mb-1">
+            {provider.service}
+          </p>
           <p className="text-[12px] text-slate-500 font-medium mb-1.5">
             {provider.experience} exp · {provider.location}
           </p>

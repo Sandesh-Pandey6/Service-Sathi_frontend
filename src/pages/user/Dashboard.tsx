@@ -56,7 +56,7 @@ export default function UserDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Good morning, {firstName} <span style={{ fontSize: '22px' }}>👋</span>
+            Good morning, {firstName} <span style={{ fontSize: '22px' }}></span>
           </h1>
           <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0', fontWeight: 400 }}>
             You have <span style={{ color: '#dc2626', fontWeight: 700 }}>{dashboardData.stats.upcoming} upcoming bookings</span>.
@@ -72,7 +72,7 @@ export default function UserDashboard() {
           { icon: CalendarDays, iconBg: '#eff6ff', iconColor: '#3b82f6', value: dashboardData.stats.total, label: 'Total Bookings', trend: 'All time' },
           { icon: Clock, iconBg: '#fff7ed', iconColor: '#f97316', value: dashboardData.stats.upcoming, label: 'Upcoming', trend: 'Next 7 days' },
           { icon: CheckCircle2, iconBg: '#ecfdf5', iconColor: '#10b981', value: dashboardData.stats.completed, label: 'Completed', trend: 'All time' },
-          { icon: Star, iconBg: '#faf5ff', iconColor: '#a855f7', value: dashboardData.stats.reviews, label: 'Reviews Given', trend: 'Avg. ⭐' },
+          { icon: Star, iconBg: '#faf5ff', iconColor: '#a855f7', value: dashboardData.stats.reviews, label: 'Reviews Given', trend: 'Avg. ' },
         ].map((stat, idx) => {
           const Icon = stat.icon;
           return (

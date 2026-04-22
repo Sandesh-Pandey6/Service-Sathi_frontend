@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ThumbsUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ThumbsUp, Star } from 'lucide-react';
 import { providerApi, authApi } from '@/lib/api';
 
 export default function ProviderReviews() {
@@ -44,8 +44,8 @@ export default function ProviderReviews() {
           <div className="bg-white rounded-[24px] p-10 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] h-full flex flex-col items-center">
             <div className="text-center mb-8">
               <h2 className="text-[64px] font-extrabold text-slate-900 leading-none mb-2">{avgRating.toFixed(1)}</h2>
-              <div className="flex justify-center gap-1 text-amber-400 text-xl mb-3">
-                {[1, 2, 3, 4, 5].map(s => <span key={s}>{s <= Math.round(avgRating) ? '★' : '☆'}</span>)}
+              <div className="flex justify-center gap-1 text-amber-400 mb-3">
+                {[1, 2, 3, 4, 5].map(s => <Star key={s} size={24} className={s <= Math.round(avgRating) ? 'fill-current text-amber-400' : 'text-slate-300'} />)}
               </div>
               <p className="text-[13px] font-medium text-slate-400">Based on {reviews.length} reviews</p>
             </div>
@@ -87,8 +87,8 @@ export default function ProviderReviews() {
                   </div>
                   <div>
                     <h3 className="text-[14px] font-bold text-slate-900 leading-tight">{review.customer?.user?.full_name || 'Customer'}</h3>
-                    <div className="flex text-amber-400 text-[13px] mt-0.5">
-                      {'★'.repeat(review.rating || 0)}<span className="text-slate-200">{'★'.repeat(5 - (review.rating || 0))}</span>
+                    <div className="flex text-amber-400 gap-0.5 mt-0.5">
+                      {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} className={s <= (review.rating || 0) ? 'fill-current' : 'text-slate-200'} />)}
                     </div>
                   </div>
                 </div>

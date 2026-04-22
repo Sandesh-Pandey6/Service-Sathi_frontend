@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { SimpleStatCard } from '@/components/admin/SimpleStatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, MapPin, Wrench, FileText, Check, X } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -124,8 +124,8 @@ export default function AdminProviders() {
             <thead>
               <tr className="border-b border-slate-50">
                 <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Provider</th>
-                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Email</th>
-                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Joined</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Contact</th>
+                <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Registration Details</th>
                 <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Status</th>
                 <th className="px-4 sm:px-6 py-5 text-xs font-bold text-slate-400">Actions</th>
               </tr>
@@ -138,16 +138,41 @@ export default function AdminProviders() {
                 const initials = p.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '??';
                 const avatarColor = avatarColors[idx % avatarColors.length];
                 const isVerified = p.provider_profile?.is_verified;
+                const cats = p.provider_profile?.categories || [];
+                const expYears = p.provider_profile?.experience_years;
+                const provCity = p.provider_profile?.city;
+                const provBio = p.provider_profile?.bio;
                 return (
                   <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-full ${avatarColor} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm`}>{initials}</div>
-                        <p className="font-bold text-sm text-slate-800">{p.full_name}</p>
+                        <div>
+                          <p className="font-bold text-sm text-slate-800">{p.full_name}</p>
+                          <p className="text-[11px] text-slate-400 font-medium">{new Date(p.created_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-4"><span className="text-sm font-medium text-slate-500">{p.email}</span></td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><span className="text-sm font-medium text-slate-500">{new Date(p.created_at).toLocaleDateString()}</span></td>
+                    <td className="px-4 sm:px-6 py-4">
+                      <p className="text-sm font-medium text-slate-600">{p.email}</p>
+                      {p.phone && <p className="text-xs text-slate-400 font-medium mt-0.5">{p.phone}</p>}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4">
+                      <div className="space-y-1.5 max-w-[260px]">
+                        {cats.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {cats.map((c: string) => (
+                              <span key={c} className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold">{c}</span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                          {provCity && <span className="flex items-center gap-0.5"><MapPin size={14} className="mr-1" /> {provCity}</span>}
+                          {expYears != null && <span className="flex items-center gap-0.5"><Wrench size={14} className="mr-1" /> {expYears}yr{expYears !== 1 ? 's' : ''} exp</span>}
+                        </div>
+                        {provBio && <p className="text-[11px] text-slate-400 font-medium truncate" title={provBio}>{provBio}</p>}
+                      </div>
+                    </td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><StatusBadge status={isVerified ? 'verified' : 'pending'} /></td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -230,7 +255,7 @@ export default function AdminProviders() {
                           <img src={url} alt={key} className="w-full h-auto object-contain bg-white rounded-lg max-h-[200px] hover:opacity-90 transition-opacity cursor-pointer border border-gray-100" />
                         </a>
                       ) : (
-                        <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium text-sm block text-center py-4">📄 View Document</a>
+                        <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium text-sm block text-center py-4 flex items-center justify-center gap-1"><FileText size={16} /> View Document</a>
                       )}
                     </div>
 
@@ -252,7 +277,7 @@ export default function AdminProviders() {
                           }}
                           className="px-5 py-2 rounded-lg text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-sm"
                         >
-                          ✓ Approve
+                          <Check size={16} className="inline mr-1" /> Approve
                         </button>
                       )}
                       {docStatus !== 'rejected' && (
@@ -271,14 +296,14 @@ export default function AdminProviders() {
                           }}
                           className="px-5 py-2 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
                         >
-                          ✕ Reject
+                          <X size={16} className="inline mr-1" /> Reject
                         </button>
                       )}
                       {docStatus === 'approved' && (
-                        <span className="text-sm font-bold text-emerald-600 ml-2">✓ Approved — visible to customers</span>
+                        <span className="text-sm font-bold text-emerald-600 ml-2 flex items-center"><Check size={14} className="mr-1" /> Approved — visible to customers</span>
                       )}
                       {docStatus === 'rejected' && (
-                        <span className="text-sm font-bold text-red-600 ml-2">✕ Rejected</span>
+                        <span className="text-sm font-bold text-red-600 ml-2 flex items-center"><X size={14} className="mr-1" /> Rejected</span>
                       )}
                     </div>
                   </div>

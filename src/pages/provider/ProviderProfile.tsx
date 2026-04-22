@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { authApi, providerApi, servicesApi, usersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { Star, Camera, Loader2 } from 'lucide-react';
 
 export default function ProviderProfile() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Controlled form fields
   const [fullName, setFullName] = useState('');
@@ -70,6 +73,41 @@ export default function ProviderProfile() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    try {
+      setUploadingAvatar(true);
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const { data } = await usersApi.uploadAvatar(formData);
+      // Update user state with new image
+      setUser((prev: any) => ({
+        ...prev,
+        profile_image: data.profile_image,
+        provider_profile: {
+          ...prev?.provider_profile,
+          profile_image: data.profile_image,
+        },
+      }));
+      toast.success('Profile photo updated!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to upload photo');
+    } finally {
+      setUploadingAvatar(false);
+      // Reset the input so re-selecting the same file triggers onChange
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
   const handleAddService = async () => {
     if (!newServiceCategoryId || !newServiceRate) {
       toast.error('Please select a category and specify a rate');
@@ -110,6 +148,24 @@ export default function ProviderProfile() {
       setProviderServices(prev => prev.filter(s => s.id !== id));
     } catch (err: any) {
       toast.error('Failed to delete service');
+    }
+  };
+
+  const handleUpdateServicePrice = async (id: string, newPriceStr: string) => {
+    const newPrice = Number(newPriceStr);
+    if (isNaN(newPrice) || newPrice <= 0) return;
+    
+    const svc = providerServices.find(s => s.id === id);
+    if (svc && svc.price === newPrice) return; // No change
+
+    try {
+      await servicesApi.update(id, { price: newPrice });
+      toast.success('Price updated automatically');
+      setProviderServices(prev => prev.map(s => s.id === id ? { ...s, price: newPrice } : s));
+    } catch (err: any) {
+      toast.error('Failed to update price');
+      // Force re-render to revert input value
+      setProviderServices([...providerServices]); 
     }
   };
 
@@ -191,17 +247,30 @@ export default function ProviderProfile() {
         <div className="flex items-center gap-6">
           <div className="relative">
             <div className="w-24 h-24 rounded-2xl bg-[#eff0fe] flex items-center justify-center text-indigo-600 font-extrabold text-[28px] overflow-hidden">
-              {user?.profile_image ? (
-                <img src={user.profile_image} alt={user.full_name} className="w-full h-full object-cover" />
+              {uploadingAvatar ? (
+                <div className="w-full h-full flex items-center justify-center bg-indigo-50">
+                  <Loader2 size={28} className="animate-spin text-indigo-500" />
+                </div>
+              ) : (user?.provider_profile?.profile_image || user?.profile_image) ? (
+                <img src={user?.provider_profile?.profile_image || user?.profile_image} alt={user.full_name} className="w-full h-full object-cover" />
               ) : (
                 initials
               )}
             </div>
-            <button className="absolute -bottom-2 -right-2 w-[34px] h-[34px] bg-indigo-600 rounded-full flex items-center justify-center text-white border-4 border-white hover:bg-indigo-700 transition">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-2 -right-2 w-[34px] h-[34px] bg-indigo-600 rounded-full flex items-center justify-center text-white border-4 border-white hover:bg-indigo-700 transition disabled:opacity-50"
+            >
+              <Camera size={16} />
             </button>
           </div>
           <div>
@@ -210,8 +279,8 @@ export default function ProviderProfile() {
               {user?.provider_profile?.categories?.[0] || 'Service Provider'} - {user?.provider_profile?.city || 'No City'}
             </p>
             <div className="flex items-center gap-1.5 text-[13px]">
-              <div className="flex text-amber-400 text-sm">
-                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+              <div className="flex text-amber-400 gap-0.5">
+                {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} className="fill-current" />)}
               </div>
               <span className="font-bold text-slate-700 ml-1">{user?.provider_profile?.rating?.toFixed(1) || '0.0'}</span>
               <span className="text-slate-400 font-medium">({user?.provider_profile?.total_reviews || 0} reviews)</span>
@@ -294,7 +363,14 @@ export default function ProviderProfile() {
                  </div>
                  <div className="flex items-center gap-2 flex-1">
                    <span className="text-slate-400 text-[13px] font-bold w-6 text-right">Rs</span>
-                   <span className="text-slate-800 text-[14px] font-extrabold">{svc.price}</span>
+                   <input 
+                     type="number" 
+                     defaultValue={svc.price} 
+                     onBlur={(e) => handleUpdateServicePrice(svc.id, e.target.value)}
+                     className="text-slate-800 text-[14px] font-extrabold w-24 bg-transparent outline-none border-b border-transparent hover:border-indigo-200 focus:border-indigo-400 focus:bg-indigo-50/30 px-1 py-0.5 rounded transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                     placeholder="0"
+                     min="1"
+                   />
                  </div>
                   <div className="text-slate-400 text-[12px] font-medium pr-4 w-20 text-right">
                    {svc.price_type === 'hourly' ? 'per hour' : 'fixed'}

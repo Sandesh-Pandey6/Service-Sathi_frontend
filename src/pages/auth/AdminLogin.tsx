@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, AlertTriangle, Wrench } from 'lucide-react';
+import { Shield, AlertTriangle } from 'lucide-react';
 
 import LoginForm, { LoginFormValues } from '@/components/auth/LoginForm';
 
@@ -25,7 +25,7 @@ export default function AdminLogin() {
     try {
       setIsLoading(true);
 
-      // Fully clear any previous session (Redux state + localStorage) to prevent session bleeding
+      // Fully clear any previous session (Redux state + localStorage) to prevent session crashing 
       clearAuthState();
 
       const response = await authApi.login({

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -13,15 +13,19 @@ import {
   ChevronsLeft,
   Search,
   Bell,
-  Wrench
+  Wrench,
+  CreditCard
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const ICON_MAP: Record<string, any> = {
   dashboard: LayoutDashboard,
   'my bookings': CalendarCheck,
+  payments: CreditCard,
   services: LayoutGrid,
   favourites: Heart,
   messages: MessageSquare,
+  notifications: Bell,
   profile: User,
   settings: Settings,
   support: HelpCircle,
@@ -46,11 +50,35 @@ export interface DashboardConfig {
 export default function DashboardLayout({ config }: { config: DashboardConfig }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUnread = async () => {
+      try {
+        const { notificationsApi } = await import('@/api/notifications.api');
+        const data = await notificationsApi.getNotifications({ limit: 1, unread_only: true });
+        if (mounted) setUnreadNotifs(data?.unread_count || 0);
+      } catch { /* ignore */ }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    
+    // Listen for custom event to clear or update bubble instantly
+    const handleNotificationsRead = () => fetchUnread();
+    window.addEventListener('notificationsRead', handleNotificationsRead);
+    
+    return () => { 
+      mounted = false; 
+      clearInterval(interval); 
+      window.removeEventListener('notificationsRead', handleNotificationsRead);
+    };
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    navigate('/login');
+    logout(); // This clears Redux state and localStorage automatically
+    navigate('/');
   };
 
   const getDayStr = () => {
@@ -74,9 +102,17 @@ export default function DashboardLayout({ config }: { config: DashboardConfig })
 
         {/* Profile Banner */}
         <div className="mx-5 mb-5 bg-red-50 rounded-2xl p-3 flex items-center gap-3">
-          <div className="w-[38px] h-[38px] rounded-full bg-red-600 flex items-center justify-center text-white font-extrabold text-[13px] shrink-0">
-            {config.userAvatarSeed?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'US'}
-          </div>
+          {config.userAvatarUrl ? (
+            <img
+              src={config.userAvatarUrl}
+              alt={config.userName ?? 'User'}
+              className="w-[38px] h-[38px] rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-[38px] h-[38px] rounded-full bg-red-600 flex items-center justify-center text-white font-extrabold text-[13px] shrink-0">
+              {config.userAvatarSeed?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'US'}
+            </div>
+          )}
           <div className="min-w-0">
             <p className="text-[13px] font-bold text-slate-900 truncate">
               {config.userName ?? 'User Name'}
@@ -167,9 +203,11 @@ export default function DashboardLayout({ config }: { config: DashboardConfig })
 
             <div className="flex items-center gap-4 border-l border-gray-100 pl-6">
               {/* Bell */}
-              <button className="relative flex items-center justify-center transition-colors hover:scale-105">
+              <button onClick={() => navigate('/user/notifications')} className="relative flex items-center justify-center transition-colors hover:scale-105">
                 <Bell size={20} className="text-slate-500" strokeWidth={2} />
-                <span className="absolute top-[1px] right-[2px] w-[7px] h-[7px] bg-red-600 rounded-full border border-white" />
+                {unreadNotifs > 0 && (
+                  <span className="absolute top-[1px] right-[2px] w-[7px] h-[7px] bg-red-600 rounded-full border border-white" />
+                )}
               </button>
 
               {/* Avatar Bubble */}

@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { SimpleStatCard } from '@/components/admin/SimpleStatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { Star, MessageSquare } from 'lucide-react';
+import { Star, MessageSquare, Trash2 } from 'lucide-react';
 import { adminApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 
-type ReviewStatus = 'ALL' | 'published' | 'flagged';
+type ReviewStatus = 'ALL' | 'published';
 
 export default function AdminReviews() {
   const [statusFilter, setStatusFilter] = useState<ReviewStatus>('ALL');
@@ -29,10 +30,20 @@ export default function AdminReviews() {
     }
   };
 
+  const handleDeleteReview = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    try {
+      await adminApi.deleteReview(id);
+      toast.success('Review deleted successfully');
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+    } catch (err: any) {
+      toast.error('Failed to delete review');
+    }
+  };
+
   const tabs: { value: ReviewStatus; label: string }[] = [
     { value: 'ALL', label: 'All' },
     { value: 'published', label: 'Published' },
-    { value: 'flagged', label: 'Flagged' },
   ];
 
   return (
@@ -45,7 +56,6 @@ export default function AdminReviews() {
           </p>
           <p className="text-[11px] sm:text-[13px] font-medium text-slate-500 truncate">Avg Rating</p>
         </div>
-        <SimpleStatCard title="Flagged" value={reviews.filter(r => r.is_flagged).length.toString()} color="rose" />
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
@@ -86,7 +96,16 @@ export default function AdminReviews() {
                   <p className="text-sm text-slate-600 italic leading-relaxed">"{r.comment || 'No comment'}"</p>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  <StatusBadge status={r.is_flagged ? 'flagged' : 'published'} />
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status="published" />
+                    <button
+                      onClick={() => handleDeleteReview(r.id)}
+                      className="w-7 h-7 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center shrink-0"
+                      title="Delete review"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                   <span className="text-xs text-slate-400">{new Date(r.created_at).toLocaleDateString()}</span>
                 </div>
               </div>

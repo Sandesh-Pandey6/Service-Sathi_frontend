@@ -256,7 +256,7 @@ function ReviewModal({ booking, onClose, onSuccess }: { booking: any; onClose: (
   );
 }
 
-function BookingCard({ booking, onShowDetails, onRate, onReport }: { booking: any; onShowDetails: () => void; onRate: () => void; onReport: () => void }) {
+function BookingCard({ booking, onShowDetails, onRate, onReport, onPay }: { booking: any; onShowDetails: () => void; onRate: () => void; onReport: () => void; onPay: () => void }) {
   const badge = getStatusBadge(booking.status as BookingStatus);
   const BadgeIcon = badge.icon;
   const pName = booking.provider?.user?.full_name || 'Provider';
@@ -328,6 +328,16 @@ function BookingCard({ booking, onShowDetails, onRate, onReport }: { booking: an
               <AlertTriangle size={14} /> Report
             </button>
           )}
+          {booking.status === 'CONFIRMED' && booking.payment?.payment_status !== 'PAID' && (
+            <button onClick={onPay} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#5c2d91', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '12px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(92,45,145,0.25)', transition: 'all 0.15s' }}>
+              <CreditCard size={15} /> Pay Now
+            </button>
+          )}
+          {booking.status === 'CONFIRMED' && booking.payment?.payment_status === 'PAID' && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ecfdf5', color: '#059669', padding: '10px 16px', borderRadius: '12px', fontWeight: 700, fontSize: '13px' }}>
+              <CheckCircle2 size={15} /> Paid
+            </span>
+          )}
           <button onClick={onShowDetails} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#0f172a', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '12px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
             View Details
           </button>
@@ -372,6 +382,21 @@ export default function UserBookings() {
     { key: 'cancelled', label: 'Cancelled', count: categorized.cancelled.length },
   ];
 
+  const handlePayNow = async (booking: any) => {
+    try {
+      const khaltiRes = await bookingsApi.initiateKhalti(booking.id);
+      const paymentUrl = khaltiRes.data.payment_url;
+      if (!paymentUrl) {
+        toast.error('Failed to get payment URL');
+        return;
+      }
+      sessionStorage.setItem('khalti_booking_id', booking.id);
+      window.location.href = paymentUrl;
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to initiate payment');
+    }
+  };
+
   const currentBookings = categorized[activeTab];
 
   return (
@@ -414,6 +439,7 @@ export default function UserBookings() {
               onShowDetails={() => setSelectedBooking(booking)} 
               onRate={() => setRatingBooking(booking)}
               onReport={() => setReportingBooking(booking)}
+              onPay={() => handlePayNow(booking)}
             />
           ))
         )}

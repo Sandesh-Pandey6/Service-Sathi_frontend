@@ -176,7 +176,7 @@ export default function ProviderDetailPage() {
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map(s => (
-                  <Star key={s} size={14} fill={s <= Math.round(rating) ? '#facc15' : '#e2e8f0'} color={s <= Math.round(rating) ? '#facc15' : '#e2e8f0'} />
+                  <Star key={s} size={14} fill={s <= Math.round(Number(rating)) ? '#facc15' : '#e2e8f0'} color={s <= Math.round(Number(rating)) ? '#facc15' : '#e2e8f0'} />
                 ))}
                 <span className="text-[13px] font-bold text-slate-900 ml-1">{Number(rating).toFixed(1)}</span>
                 <span className="text-[12px] text-slate-400 font-medium">({totalReviews} reviews)</span>
@@ -202,7 +202,9 @@ export default function ProviderDetailPage() {
             <p className="text-[12px] text-slate-400 font-medium">Jobs Done</p>
           </div>
           <div className="text-center">
-            <p className="text-[20px] font-extrabold text-slate-900">Rs. {services[0]?.price || 0}</p>
+            <p className="text-[20px] font-extrabold text-slate-900">
+              Rs. {services.length > 0 ? Math.min(...services.map((s: any) => s.price || 0)) : 0}
+            </p>
             <p className="text-[12px] text-slate-400 font-medium">Starting Rate</p>
           </div>
           <div className="text-center">

@@ -80,7 +80,7 @@ export default function ProviderBookings() {
         <table className="w-full text-sm min-w-[900px]">
           <thead className="bg-transparent border-b border-gray-50">
             <tr>
-              {['Customer', 'Service', 'Date & Time', 'Location', 'Amount', 'Status', 'Action'].map((h, i) => (
+              {['Customer', 'Service', 'Date & Time', 'Location', 'Amount & Payment', 'Status', 'Action'].map((h, i) => (
                 <th key={h} className={`text-left text-[13px] font-bold text-slate-400 py-4 ${i === 0 ? 'pl-6' : ''} ${i === 6 ? 'pr-6' : ''}`}>{h}</th>
               ))}
             </tr>
@@ -107,7 +107,12 @@ export default function ProviderBookings() {
                 <td className="py-4 text-[13px] font-medium text-slate-500">
                   <div className="flex items-center gap-1.5"><MapPin size={14} className="text-slate-400" />{b.address || 'N/A'}</div>
                 </td>
-                <td className="py-4 text-[13px] font-extrabold text-slate-900">Rs. {b.total_amount?.toLocaleString()}</td>
+                <td className="py-4">
+                  <p className="text-[13px] font-extrabold text-slate-900">Rs. {b.total_amount?.toLocaleString()}</p>
+                  <p className={`text-[10px] font-bold mt-0.5 uppercase tracking-wide ${b.payment?.payment_status === 'PAID' ? 'text-[#00b341]' : b.payment?.payment_status === 'FAILED' ? 'text-red-500' : 'text-amber-500'}`}>
+                    {b.payment?.payment_status || 'PENDING'}
+                  </p>
+                </td>
                 <td className="py-4">
                   <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${STATUS_STYLE[b.status] || 'bg-gray-100 text-gray-600'}`}>
                     {b.status}
@@ -125,9 +130,23 @@ export default function ProviderBookings() {
                     </div>
                   )}
                   {b.status === 'CONFIRMED' && (
-                    <button onClick={() => handleStatusUpdate(b.id, 'COMPLETED')} className="bg-[#00b341] text-white px-3 py-1.5 rounded-lg text-[12px] font-bold hover:bg-[#009938] transition-colors">
-                      Mark Done
-                    </button>
+                    <div className="flex flex-col items-start gap-1">
+                      <button 
+                        onClick={() => handleStatusUpdate(b.id, 'COMPLETED')} 
+                        disabled={b.payment?.payment_status !== 'PAID'}
+                        title={b.payment?.payment_status !== 'PAID' ? 'Waiting for customer payment' : ''}
+                        className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors ${
+                          b.payment?.payment_status === 'PAID' 
+                            ? 'bg-[#00b341] text-white hover:bg-[#009938]' 
+                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        Mark Done
+                      </button>
+                      {b.payment?.payment_status !== 'PAID' && (
+                        <span className="text-[9px] font-bold text-amber-500 leading-none">Awaiting Payment</span>
+                      )}
+                    </div>
                   )}
                   {(b.status === 'COMPLETED' || b.status === 'CANCELLED') && (
                     <button className="flex items-center gap-1.5 text-indigo-600 font-bold text-[13px] hover:text-indigo-700 transition-colors">

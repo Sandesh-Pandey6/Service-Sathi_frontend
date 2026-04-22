@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,8 +9,10 @@ import {
   Settings,
   LogOut,
   EyeOff,
+  User,
   Wrench,
-  CalendarDays
+  CalendarDays,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,12 +25,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Overview', icon: LayoutDashboard, path: '/provider/dashboard' },
-  { label: 'Bookings', icon: CalendarCheck, path: '/provider/bookings', badge: 2 },
+  { label: 'Bookings', icon: CalendarCheck, path: '/provider/bookings' },
   { label: 'Availability', icon: CalendarDays, path: '/provider/availability' },
   { label: 'Earnings', icon: DollarSign, path: '/provider/earnings' },
   { label: 'Reviews', icon: Star, path: '/provider/reviews' },
-  { label: 'Chat', icon: MessageSquare, path: '/provider/messages', badge: 3 },
-  { label: 'My Profile', icon: Settings, path: '/provider/profile' },
+  { label: 'Chat', icon: MessageSquare, path: '/provider/messages' },
+  { label: 'My Profile', icon: User, path: '/provider/profile' },
+  { label: 'Notifications', icon: Bell, path: '/provider/notifications' },
+  { label: 'Settings', icon: Settings, path: '/provider/settings' },
 ];
 
 interface ProviderSidebarProps {
@@ -38,6 +42,51 @@ interface ProviderSidebarProps {
 export const ProviderSidebar: React.FC<ProviderSidebarProps> = ({ collapsed = false }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [pendingBookings, setPendingBookings] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchCounts = async () => {
+      try {
+        // Fetch unread message count
+        const { chatApi, bookingsApi } = await import('@/lib/api');
+        const [chatRes, bookingsRes] = await Promise.all([
+          chatApi.getConversations().catch(() => ({ data: { conversations: [] } })),
+          bookingsApi.getProviderBookings({ status: 'PENDING' } as any).catch(() => ({ data: { bookings: [] } })),
+        ]);
+        if (!mounted) return;
+        const convs = chatRes.data?.conversations || [];
+        const totalUnread = convs.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0);
+        setUnreadMessages(totalUnread);
+        const bookings = bookingsRes.data?.bookings || [];
+        setPendingBookings(Array.isArray(bookings) ? bookings.length : 0);
+      } catch {
+        // silently ignore
+      }
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30000);
+
+    const handleChatCount = (e: Event) => {
+      const customEvent = e as CustomEvent<number>;
+      if (mounted) setUnreadMessages(customEvent.detail);
+    };
+    window.addEventListener('chatCountUpdated', handleChatCount);
+
+    return () => { 
+      mounted = false; 
+      clearInterval(interval); 
+      window.removeEventListener('chatCountUpdated', handleChatCount);
+    };
+  }, []);
+
+  // Build nav items with dynamic badges
+  const dynamicNavItems = navItems.map(item => {
+    if (item.path === '/provider/messages' && unreadMessages > 0) return { ...item, badge: unreadMessages };
+    if (item.path === '/provider/bookings' && pendingBookings > 0) return { ...item, badge: pendingBookings };
+    return item;
+  });
   
   // Hardcoded for UI presentation
   const initials = user?.full_name?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'KP';
@@ -58,9 +107,13 @@ export const ProviderSidebar: React.FC<ProviderSidebarProps> = ({ collapsed = fa
       {/* User Info & Status */}
       <div className="px-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
-            {initials}
-          </div>
+          {((user as any)?.provider_profile?.profile_image || user?.profile_image) ? (
+            <img src={(user as any)?.provider_profile?.profile_image || user?.profile_image} alt={name} className="w-10 h-10 rounded-full object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+              {initials}
+            </div>
+          )}
           <div>
             <p className="text-[14px] font-bold text-slate-900 leading-tight">{name}</p>
             <p className="text-[12px] text-slate-500">{subtitle}</p>
@@ -76,7 +129,7 @@ export const ProviderSidebar: React.FC<ProviderSidebarProps> = ({ collapsed = fa
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-4 space-y-1">
-        {navItems.map(({ label, icon: Icon, path, badge }) => {
+        {dynamicNavItems.map(({ label, icon: Icon, path, badge }) => {
           const isActive = location.pathname.includes(path) || (path === '/provider/dashboard' && location.pathname === '/provider');
           
           return (

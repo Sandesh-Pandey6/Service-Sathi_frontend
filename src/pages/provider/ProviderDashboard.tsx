@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { providerApi, authApi } from '@/lib/api';
+import { Star } from 'lucide-react';
 
 export default function ProviderDashboard() {
   const [loading, setLoading] = useState(true);
@@ -66,7 +67,7 @@ export default function ProviderDashboard() {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
           </div>
           <h3 className="text-[28px] font-extrabold text-slate-900 leading-none flex items-center gap-2">
-            {stats?.rating?.toFixed(1) || '0.0'} <span className="text-xl text-slate-800">★</span>
+            {stats?.rating?.toFixed(1) || '0.0'} <Star size={20} className="fill-current text-slate-800" />
           </h3>
           <p className="text-[13px] font-bold text-slate-700 mt-1">Rating</p>
           <p className="text-[12px] font-medium text-slate-400 mt-1">From {stats?.total_reviews || 0} reviews</p>
@@ -123,21 +124,6 @@ export default function ProviderDashboard() {
 
         {/* Right Column */}
         <div className="col-span-12 lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
-            <h2 className="text-[15px] font-extrabold text-slate-900 mb-6">Weekly Earnings</h2>
-            <div className="h-32 flex items-end justify-between gap-1 mb-2">
-              {[30, 40, 20, 50, 35, 90, 25].map((h, i) => (
-                <div key={i} className={`w-full rounded-sm ${i === 5 ? 'bg-indigo-600' : 'bg-[#e6e9f6]'}`} style={{ height: `${h}%` }} />
-              ))}
-            </div>
-            <div className="flex justify-between text-[11px] font-bold text-slate-400 px-1 mb-4">
-              <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span className="text-indigo-600">S</span><span>S</span>
-            </div>
-            <div className="text-[13px]">
-              <span className="text-slate-400 font-medium">This week:</span>{' '}
-              <span className="font-extrabold text-slate-900">Rs. {(stats?.week_earnings || 0).toLocaleString()}</span>
-            </div>
-          </div>
 
           <div className="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
             <h2 className="text-[15px] font-extrabold text-slate-900 mb-6">Recent Reviews</h2>
@@ -152,7 +138,11 @@ export default function ProviderDashboard() {
                     </div>
                     <div>
                       <h4 className="text-[13px] font-bold text-slate-900 leading-none mb-1">{review.customer?.user?.full_name || 'Customer'}</h4>
-                      <div className="flex text-amber-400 text-[10px]">{'★'.repeat(review.rating || 0)}{'☆'.repeat(5 - (review.rating || 0))}</div>
+                      <div className="flex text-amber-400 gap-0.5">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star key={s} size={12} className={s <= (review.rating || 0) ? 'fill-current' : 'text-slate-200'} />
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <p className="text-[12px] font-medium text-slate-500 leading-snug">{review.comment || 'No comment'}</p>

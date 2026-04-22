@@ -7,6 +7,8 @@ import {
   ShieldCheck,
   Lock,
   ArrowRight,
+  Wrench,
+  User,
 } from 'lucide-react';
 
 const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -97,7 +99,7 @@ export default function NewBooking() {
                 <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-16 h-16 mx-auto rounded-full bg-slate-400/30 flex items-center justify-center mb-2">
-                      <span className="text-3xl">🔧</span>
+                      <Wrench size={32} className="text-slate-400" />
                     </div>
                     <p className="text-xs text-slate-500 font-medium">Service Image</p>
                   </div>
@@ -191,7 +193,7 @@ export default function NewBooking() {
             <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/10">
               {/* Placeholder avatar */}
               <div className="w-12 h-12 rounded-full border-2 border-[#00d4d4] bg-slate-600 flex items-center justify-center text-lg">
-                👤
+                <User size={24} className="text-slate-200" />
               </div>
               <div>
                 <p className="font-bold text-base">Arjun Thapa</p>

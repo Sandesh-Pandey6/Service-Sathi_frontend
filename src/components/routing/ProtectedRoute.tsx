@@ -100,7 +100,10 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
 
   // Not authenticated → send to login
   if (!accessToken || !user) {
-    console.log('[ProtectedRoute] Not authenticated, redirecting to /login');
+    console.log('[ProtectedRoute] Not authenticated, redirecting...');
+    if (location.pathname.startsWith('/provider') || location.pathname.startsWith('/user') || location.pathname.startsWith('/admin')) {
+      return <Navigate to="/" replace />;
+    }
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

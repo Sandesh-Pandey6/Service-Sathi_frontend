@@ -16,6 +16,7 @@ export default function KhaltiCallbackPage() {
 
   const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>('loading');
   const [message, setMessage] = useState('Verifying your payment...');
+  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     const verify = async () => {
@@ -42,6 +43,7 @@ export default function KhaltiCallbackPage() {
         if (data.success) {
           setVerifyStatus('success');
           setMessage('Payment completed successfully!');
+          setConfirmedBookingId(bookingId);
           toast.success('Payment confirmed!');
         } else if (data.khalti_status === 'Pending' || data.khalti_status === 'Initiated') {
           setVerifyStatus('pending');
@@ -121,12 +123,22 @@ export default function KhaltiCallbackPage() {
 
           <div className="flex flex-col gap-3">
             {verifyStatus === 'success' && (
-              <button
-                onClick={() => navigate('/user/bookings')}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[14px] py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                View My Bookings <ArrowRight size={16} />
-              </button>
+              <>
+                {confirmedBookingId && (
+                  <button
+                    onClick={() => navigate(`/user/bookings/${confirmedBookingId}/invoice`)}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-[14px] py-3.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mb-1"
+                  >
+                    View Invoice <ArrowRight size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate('/user/bookings')}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[14px] py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  View My Bookings <ArrowRight size={16} />
+                </button>
+              </>
             )}
 
             {(verifyStatus === 'failed' || verifyStatus === 'canceled') && (

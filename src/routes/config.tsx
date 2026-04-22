@@ -19,7 +19,10 @@ import CategoryProviders from '@/pages/user/CategoryProviders';
 import ProviderDetailPage from '@/pages/user/ProviderDetail';
 import PaymentPage from '@/pages/user/PaymentPage';
 import KhaltiCallbackPage from '@/pages/user/KhaltiCallbackPage';
+import InvoicePage from '@/pages/user/InvoicePage';
 import UserMessages from '@/pages/user/Messages';
+import UserNotifications from '@/pages/user/UserNotifications';
+import UserPayments from '@/pages/user/UserPayments';
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute';
 
 import AdminLayout from '@/components/layout/AdminLayout';
@@ -30,8 +33,6 @@ import AdminServices from '@/pages/admin/AdminServices';
 import AdminBookings from '@/pages/admin/AdminBookings';
 import AdminPayments from '@/pages/admin/AdminPayments';
 import AdminReviews from '@/pages/admin/AdminReviews';
-import AdminReports from '@/pages/admin/AdminReports';
-import AdminProviderReports from '@/pages/admin/AdminProviderReports';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminSupport from '@/pages/admin/AdminSupport';
 import AdminSettings from '@/pages/admin/AdminSettings';
@@ -46,6 +47,7 @@ import ProviderProfile from '@/pages/provider/ProviderProfile';
 import ProviderAvailability from '@/pages/provider/ProviderAvailability';
 import ProviderMessages from '@/pages/provider/Messages';
 import ProviderSettings from '@/pages/provider/ProviderSettings';
+import ProviderNotifications from '@/pages/provider/ProviderNotifications';
 
 const ServicesPage = () => (
   <div className="container py-5">
@@ -83,11 +85,14 @@ export const routes = [
       { path: 'services/:categoryId', element: <CategoryProviders /> },
       { path: 'services/:categoryId/:providerId', element: <ProviderDetailPage /> },
       { path: 'bookings', element: <UserBookings /> },
+      { path: 'payments', element: <UserPayments /> },
+      { path: 'bookings/:id/invoice', element: <InvoicePage /> },
       { path: 'bookings/new', element: <NewBooking /> },
       { path: 'booking/payment', element: <PaymentPage /> },
       { path: 'booking/payment/verify', element: <KhaltiCallbackPage /> },
       { path: 'favourites', element: <div className="p-8"><h1 className="text-xl font-bold text-slate-900 mb-2">My Favourites</h1><p className="text-slate-500 text-sm">Your favourite service providers will appear here.</p></div> },
       { path: 'messages', element: <UserMessages /> },
+      { path: 'notifications', element: <UserNotifications /> },
       { path: 'profile', element: <ProfileSettings /> },
       { path: 'settings', element: <UserSettings /> },
     ],
@@ -108,8 +113,6 @@ export const routes = [
       { path: 'bookings', element: <AdminBookings /> },
       { path: 'payments', element: <AdminPayments /> },
       { path: 'reviews', element: <AdminReviews /> },
-      { path: 'reports', element: <AdminReports /> },
-      { path: 'provider-reports', element: <AdminProviderReports /> },
       { path: 'notifications', element: <AdminNotifications /> },
       { path: 'support', element: <AdminSupport /> },
       { path: 'settings', element: <AdminSettings /> },
@@ -132,6 +135,7 @@ export const routes = [
       { path: 'messages', element: <ProviderMessages /> },
       { path: 'reviews', element: <ProviderReviews /> },
       { path: 'profile', element: <ProviderProfile /> },
+      { path: 'notifications', element: <ProviderNotifications /> },
       { path: 'settings', element: <ProviderSettings /> },
     ],
   },

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
-import { User, Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, Loader2, MapPin, Check, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ShieldCheck, Loader2, MapPin, Check, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 type RoleTab = 'CUSTOMER' | 'PROVIDER';
 type Step = 'ACCOUNT' | 'PERSONAL' | 'OTP';
@@ -63,7 +63,7 @@ export default function Register() {
 
   // OTP Timer
   useEffect(() => {
-    let t: NodeJS.Timeout;
+    let t: ReturnType<typeof setInterval>;
     if (step === 'OTP' && resendTimer > 0) t = setInterval(() => setResendTimer(p => p - 1), 1000);
     return () => clearInterval(t);
   }, [step, resendTimer]);

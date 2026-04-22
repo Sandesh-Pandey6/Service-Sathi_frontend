@@ -49,58 +49,6 @@ export default function AdminSettings() {
           </button>
         </div>
 
-        {/* Payment Gateway */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-          <h2 className="text-[15px] font-bold text-slate-800 mb-6">Payment Gateway</h2>
-          
-          <div className="space-y-4 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <label className="text-sm font-semibold text-slate-500 sm:w-48 shrink-0">Khalti API Key</label>
-              <input type="password" defaultValue="................" className="flex-1 w-full border border-slate-100 bg-white rounded-xl px-4 py-2.5 text-xl font-mono text-slate-700 outline-none focus:ring-2 focus:ring-red-500 transition-shadow shadow-sm pb-1" />
-            </div>
-            
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <label className="text-sm font-semibold text-slate-500 sm:w-48 shrink-0">eSewa Merchant ID</label>
-              <input type="text" defaultValue="EPAYTEST" className="flex-1 w-full border border-slate-100 bg-white rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-500 transition-shadow shadow-sm" />
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <label className="text-sm font-semibold text-slate-500 sm:w-48 shrink-0">Cash on Delivery</label>
-              <input type="text" defaultValue="Enabled" className="flex-1 w-full border border-slate-100 bg-white rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-500 transition-shadow shadow-sm" />
-            </div>
-          </div>
-          
-          <button onClick={() => toast.success('Payment Settings Saved')} className="bg-[#e4002b] hover:bg-red-700 text-white text-[13px] font-bold px-6 py-2.5 rounded-xl transition-colors">
-            Save Payment Gateway
-          </button>
-        </div>
-
-        {/* Notifications */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-          <h2 className="text-[15px] font-bold text-slate-800 mb-6">Notifications</h2>
-          
-          <div className="space-y-4 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <label className="text-sm font-semibold text-slate-500 sm:w-48 shrink-0">SMS Gateway</label>
-              <input type="text" defaultValue="Sparrow SMS" className="flex-1 w-full border border-slate-100 bg-white rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-500 transition-shadow shadow-sm" />
-            </div>
-            
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <label className="text-sm font-semibold text-slate-500 sm:w-48 shrink-0">SMS API Key</label>
-              <input type="password" defaultValue="............" className="flex-1 w-full border border-slate-100 bg-white rounded-xl px-4 py-2.5 text-xl font-mono text-slate-700 outline-none focus:ring-2 focus:ring-red-500 transition-shadow shadow-sm pb-1" />
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <label className="text-sm font-semibold text-slate-500 sm:w-48 shrink-0">Email Provider</label>
-              <input type="text" defaultValue="SendGrid" className="flex-1 w-full border border-slate-100 bg-white rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-500 transition-shadow shadow-sm" />
-            </div>
-          </div>
-          
-          <button onClick={() => toast.success('Notification Settings Saved')} className="bg-[#e4002b] hover:bg-red-700 text-white text-[13px] font-bold px-6 py-2.5 rounded-xl transition-colors">
-            Save Notifications
-          </button>
-        </div>
-
         {/* Admin Credentials */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
           <h2 className="text-[15px] font-bold text-slate-800 mb-6">Admin Account</h2>

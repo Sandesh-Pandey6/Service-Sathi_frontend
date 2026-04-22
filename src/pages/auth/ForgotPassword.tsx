@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Mail, ArrowLeft, Lock, Eye, EyeOff, Wrench } from 'lucide-react';
+import { Mail, ArrowLeft, Lock, Eye, EyeOff } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const THEMES = {
@@ -149,7 +149,7 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex font-sans" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-      {/* ═══ Left Branding Panel ═══ */}
+      {/* Left Branding Panel */}
       <div className={`hidden lg:flex w-[420px] xl:w-[460px] flex-shrink-0 flex-col justify-between ${t.panelBg} text-white p-10 xl:p-12 relative overflow-hidden`}>
         {/* Brand */}
         <div className="flex items-center gap-2.5 z-10">
@@ -331,7 +331,7 @@ export default function ForgotPassword() {
                           required: 'Password is required',
                           minLength: { value: 8, message: 'Minimum 8 characters' },
                           pattern: {
-                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$/,
                             message: 'Must include uppercase, lowercase, number, special char'
                           }
                         })}

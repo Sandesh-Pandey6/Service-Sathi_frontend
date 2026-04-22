@@ -145,11 +145,7 @@ export default function AdminServices() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description (opt)</label>
                 <textarea value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)} placeholder="Short outline of services." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm min-h-[80px] resize-none outline-none focus:ring-2 focus:ring-red-100"></textarea>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Icon Emoji (opt)</label>
-                <input type="text" value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} placeholder="e.g. ⚡" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-100" />
-              </div>
+            </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setShowAddModal(false)} className="flex-1 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm hover:bg-slate-200 transition-colors">Cancel</button>

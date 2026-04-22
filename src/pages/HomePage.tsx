@@ -18,7 +18,8 @@ import {
   Apple,
   PlayCircle,
   Calendar,
-  ShieldCheck
+  ShieldCheck,
+  Heart
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -451,7 +452,7 @@ export default function HomePage() {
 
           <div className="pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-slate-500 text-[11px]">
-              &copy; {new Date().getFullYear()} ServiceSathi Pvt. Ltd. All rights reserved. Made with <span className="text-red-500">♥</span> in Nepal.
+              &copy; {new Date().getFullYear()} ServiceSathi Pvt. Ltd. All rights reserved. Made with <span className="text-red-500"><Heart size={14} className="inline fill-current" /></span> in Nepal.
             </p>
             <div className="flex gap-6 text-[11px] font-medium">
               <a href="#" className="text-slate-500 hover:text-white transition-colors">Privacy Policy</a>

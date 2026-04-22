@@ -37,7 +37,7 @@ export default function ChangePasswordModal({
 
     // Password logic from registration: User requirements 
     // Usually 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).*$/;
     if (newPassword.length < 8) {
       return toast.error('Password must be at least 8 characters');
     }
